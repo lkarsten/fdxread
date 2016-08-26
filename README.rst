@@ -15,13 +15,9 @@ some other metrics I'm still not sure is right. Use at your own risk.
 Tested on Linux and OSX.
 
 On a side note, I believe this is the only open/freely available document on
-the packet format used in the Fast Data eXchange (FDX) protocol used in Nexus Marine AB's
-Nexus product line. See ``docs/protocol.rst`` for notes taken while figuring this out.
+the packet format of the Fast Data eXchange (FDX) protocol used in Nexus Marine AB's
+Nexus products. See ``fdxprotocol.rst`` for notes taken while working this out.
 
-
-The aim of this document is to collect open/free information about
-the Fast Data eXchange (FDX) protocol used by Nexus Marine AB's
-Nexus product line. (now owned by Garmin)
 
 Running it
 ----------
@@ -49,6 +45,8 @@ If you want to reply an old hex file::
 To avoid having to muck around with serial ports and locking, I usually run a kplex_ TCP
 server on port 10110, and pipe the output from ``nmeaformat.py`` to it using netcat. That way
 OpenCPN can read it easily, and I get to know where I am on the map.
+
+.. _kplex: http://www.stripydog.com/kplex/
 
 License
 -------
