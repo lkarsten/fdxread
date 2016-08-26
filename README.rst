@@ -1,0 +1,59 @@
+Garmin GND10 connector
+======================
+
+This is software to read the output from the USB port on a Garmin GND10 bridge.
+
+The GND10 bridge is typically installed as part of a Garmin gWind package with
+(possibly wireless) anemometer, airmar paddlewheel and a Garmin GNX20 display. It
+translates between the Nexus FDX protocol and NMEA2000. My setup also has a Garmin
+GPS19x unit.
+
+Everything is deduced from staring at the arriving bytes while disconnecting
+some units and motoring in circles. Something was pretty simple to figure out,
+some other metrics I'm still not sure is right. Use at your own risk.
+
+Tested on Linux and OSX.
+
+On a side note, I believe this is the only open/freely available document on
+the packet format used in the Fast Data eXchange (FDX) protocol used in Nexus Marine AB's
+Nexus product line. See ``docs/protocol.rst`` for notes taken while figuring this out.
+
+
+The aim of this document is to collect open/free information about
+the Fast Data eXchange (FDX) protocol used by Nexus Marine AB's
+Nexus product line. (now owned by Garmin)
+
+Running it
+----------
+
+Right now the different tools in here should be chained together with unix
+pipes. To make it more user friendly down the road this may change, but for the
+time being, try::
+
+    $ ./dumpserial.py | ./fdxdecode.py | ./nmeaformat.py 2>/dev/null
+
+This will read binary messages from `/dev/ttyACM0` (default), hexdump it in the format
+that ``fdxdecode.py`` expects, and feed it into it. ``fdxdecode.py`` will decode the data fields
+and (currently) output a small JSON snippet per line, which ``nmeaformat.py`` will turn into
+NMEA0183.
+
+If you want to reply an old hex file::
+
+    $ ./olddumpformat.py dumps/foo.dump  | ./fdxdecode.py  | ./nmeaformat.py 2>/dev/null
+    $FVMWV,214.56,R,1.13,K,A,*3
+    $SDDBT,,f,5.21,m,,F,*3C
+    $SDVHW,0.0,T,0.0,M,0.00,N,0.0,K,*5E
+    $FVMWV,214.56,R,1.13,K,A,*3
+    [..]
+
+To avoid having to muck around with serial ports and locking, I usually run a kplex_ TCP
+server on port 10110, and pipe the output from ``nmeaformat.py`` to it using netcat. That way
+OpenCPN can read it easily, and I get to know where I am on the map.
+
+License
+-------
+
+The contents of this repository is licensed under GNU GPLv2. See the ``LICENSE`` file for more information.
+
+Copyright (C) 2016 Lasse Karstensen
+
