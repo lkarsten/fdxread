@@ -1,60 +1,8 @@
 FDX protocol specification
 ==========================
 
-This is all reverse-engineered and collected from official
-and unofficial sources on the Internet.
-
-Physical network
-----------------
-
-* multi-talker multi-receiver data bus.
-
-* RS485 based on 9600 baud. 1 start bit, 8 data bits, 1 parity bit.
-
-* Up to 32 senders/receivers.
-
-* Bus consist of 4 wires. Green: +12V, Yellow: Data A, White: Data B, Shield: Ground.
-
-The bus can be extended up to 1000m in length. (supposedly)
-
-
-Addressing
-----------
-
-Each talker has a nexus id.
-
-The unit with the lowest ID on the network is the _bus master_. The bus master
-allots time slots to the other talkers.
-
-By default units pick their own nexus id, starting from 16.
-
-
-
-Units
------
-
-* NX2 server
-(nexusid 0)
-Sometimes NX2 FDX server.
-
-
-* WSI box
-(nexusid 2)
-
-
 Protocol
 --------
-
-
-Initiating
-~~~~~~~~~~
-
-The NX2 server operates in NMEA mode by default. If it receives a special
-NMEA0183 message, it switches to FDX mode:
-
-  > $PSILFDX,,R
-  < (unknown)
-
 
 Message format
 ~~~~~~~~~~~~~~
@@ -82,164 +30,13 @@ Messages are varying. Between 6 and 9 bytes (inclusive) being the most common si
 	    747 13
 
 
-Message length overview
-=======================
-
-6 byte messages
----------------
-
-::
-    $ cut -f2- snippet-withdepth | grep ^6 | cut -f2 | cut -b-8 | sort | uniq -c | sort -rn
-     727 09 01 08
-     721 08 01 09
-     363 03 01 02
-       7 12 04 16
-       1 30 01 31
-       1 01 04 05
-
-"12 04 16" is a 9 byte message cut short, see below.
-
-7 byte messages
----------------
-
-::
-    $ cut -f2- snippet3 | grep ^7 | cut -f2- | cut -b-8 | sort | uniq -c
-       3785 00 02 02
-	474 13 02 11
-	  3 21 04 25
-
-    $ cut -f2- snippet2longer | grep ^7 | cut -f2- | cut -b-8 | sort | uniq -c | sort -rn
-      20717 00 02 02
-      10425 11 02 13
-       2589 13 02 11
-	264 07 03 04
-	227 02 03 01
-	160 2c 02 2e
-	125 21 04 25
-	 52 01 04 05
-	 44 12 04 16
-	  8 2f 02 2d
-	  1 70 03 73
-
-
-"07 03 04" and "02 03 01" are handled as 8 byte messages.
-
-
-8 byte messages
----------------
-
-::
-    $ cut -f2- snippet3 | grep ^8 | cut -f2- | cut -b-8 | sort | uniq -c
-       9463 02 03 01
-       5678 07 03 04
-
-    $ cut -f2- snippet2longer | grep ^8 | cut -f2- | cut -b-8 | sort | uniq -c | sort -rn | head -5
-      51457 02 03 01
-      30703 07 03 04
-      17605 70 03 73
-	231 1c 03 1f
-	144 12 04 16
-
-
-Last two assumed to be transmission errors for now. Long tail on 8 bytes, lots of very low freq entries:
-
-::
-    $ cut -f2- snippet2longer | grep ^8 | cut -f2- | cut -b-8 | sort | uniq -c | wc -l
-    45
-
-
-9 byte messages
----------------
-
-::
-    $ cut -f2- snippet2 | grep ^9 | cut -f2- | cut -b-8 | sort | uniq -c
-      17549 01 04 05
-      17497 12 04 16
-      10838 15 04 11
-       2976 1a 04 1e
-       2902 21 04 25
-    $ cut -f2- snippet3 | grep ^9 | cut -f2- | cut -b-8 | sort | uniq -c
-       5678 01 04 05
-       5678 12 04 16
-	944 21 04 25
-
-"1a 04 1e" and "15 04 11" are not there in the dumps missing wind+dst200, so likely
-they contain such data.
-
-10 byte messages
-----------------
-
-Where wind+depth+stw (+gps) is available:
-
-::
-    $ cut -f2- snippet2 | grep ^10 | cut -f2- | sort | uniq -c | sort -rn
-       2956 17 05 12 00 80 ff ff ff 7f 81
-       2955 23 05 26 ff ff 00 00 80 80 81
-	  5 2e 05 2b 0f 19 3f 00 16 3f 81
-	  5 2d 05 28 02 03 86 00 13 94 81
-
-Whereas in the file with only GND10 and GPS19x:
-
-::
-    $ cut -f2- snippet3 | grep ^10 | cut -f2- | sort | uniq -c | sort -rn
-	946 23 05 26 ff ff 00 00 80 80 81
-	946 17 05 12 00 80 ff ff ff 7f 81
-
-
-These messages are "always" the same, on a moving boat.
-
-Could "17 05 12" or "23 05 26" be display luminosity level?
-
-No other 10 byte messages seen. (that wasn't obvious transmission errors)
-
-
-11 byte messages
-----------------
-
-No messages of length 11 have been seen.
-
-
-12 byte messages
-----------------
-Examples:
-
-::
-```
-24 07 23 09 27 05 1b 07 18 00 2f 81
-24 07 23 09 27 06 1b 07 18 00 2c 81
-24 07 23 09 27 07 1b 07 18 00 2d 81
-24 07 23 09 27 08 1b 07 18 00 22 81
-```
-
-
-
-13 byte messages
-----------------
-
-Initially seen as a 12 byte message, but more frequent in a 13 byte form:
-```
-20 08 28 3b db c2 0a c7 8e e0 00 81
-20 08 28 3b 5e cc 0a 58 9a e0 00 81
-20 08 28 3b 61 cc 0a 67 9a e0 00 81
-20 08 28 3b e5 c2 0a cf 8e e0 00 b7 81
-20 08 28 3b e6 c2 0a d0 8e e0 00 ab 81
-20 08 28 3b e7 c2 0a d1 8e e0 00 ab 81
-20 08 28 3b e9 c2 0a d3 8e e0 00 a7 81
-```
-
-In a different dump (no wind/dst200, only gps19x)
-```
-20 08 28 3b 1f c3 0a fe 8e e0 00 7d 81
-20 08 28 3b 21 c3 0a ff 8e e0 00 42 81
-20 08 28 3b 22 c3 0a 00 8f e0 00 bf 81
-20 08 28 3b 23 c3 0a 01 8f e0 00 bf 81
-```
-
-
+I have no information on size or shape of configuration frames.
 
 
 Sorted list of messages
 =======================
+
+This is a list of messages seen broadcasted out on the GND10 USB port.
 
 
 "00 02 02" (7 bytes) - desc: emptymsg0
@@ -768,3 +565,193 @@ List of messages seen but deemed as transmission errors.
 * 0xec4281 - always empty.
 * 0xc70a2f - just once
 * 0xc70a92 - just once
+
+Physical network
+================
+
+* multi-talker multi-receiver data bus.
+
+* RS485 based on 9600 baud. 1 start bit, 8 data bits, 1 parity bit.
+
+* Up to 32 senders/receivers.
+
+* Bus consist of 4 wires. Green: +12V, Yellow: Data A, White: Data B, Shield: Ground.
+
+The bus can be extended up to 1000m in length. (supposedly)
+
+
+Addressing
+----------
+
+Each talker has a nexus id.
+
+The unit with the lowest ID on the network is the _bus master_. The bus master
+allots time slots to the other talkers.
+
+By default units pick their own nexus id, starting from 16.
+
+
+
+Units
+-----
+
+* NX2 server
+(nexusid 0)
+Sometimes NX2 FDX server.
+
+
+* WSI box
+(nexusid 2)
+
+Message length overview
+=======================
+
+6 byte messages
+---------------
+
+::
+    $ cut -f2- snippet-withdepth | grep ^6 | cut -f2 | cut -b-8 | sort | uniq -c | sort -rn
+     727 09 01 08
+     721 08 01 09
+     363 03 01 02
+       7 12 04 16
+       1 30 01 31
+       1 01 04 05
+
+"12 04 16" is a 9 byte message cut short, see below.
+
+7 byte messages
+---------------
+
+::
+    $ cut -f2- snippet3 | grep ^7 | cut -f2- | cut -b-8 | sort | uniq -c
+       3785 00 02 02
+	474 13 02 11
+	  3 21 04 25
+
+    $ cut -f2- snippet2longer | grep ^7 | cut -f2- | cut -b-8 | sort | uniq -c | sort -rn
+      20717 00 02 02
+      10425 11 02 13
+       2589 13 02 11
+	264 07 03 04
+	227 02 03 01
+	160 2c 02 2e
+	125 21 04 25
+	 52 01 04 05
+	 44 12 04 16
+	  8 2f 02 2d
+	  1 70 03 73
+
+
+"07 03 04" and "02 03 01" are handled as 8 byte messages.
+
+
+8 byte messages
+---------------
+
+::
+    $ cut -f2- snippet3 | grep ^8 | cut -f2- | cut -b-8 | sort | uniq -c
+       9463 02 03 01
+       5678 07 03 04
+
+    $ cut -f2- snippet2longer | grep ^8 | cut -f2- | cut -b-8 | sort | uniq -c | sort -rn | head -5
+      51457 02 03 01
+      30703 07 03 04
+      17605 70 03 73
+	231 1c 03 1f
+	144 12 04 16
+
+
+Last two assumed to be transmission errors for now. Long tail on 8 bytes, lots of very low freq entries:
+
+::
+    $ cut -f2- snippet2longer | grep ^8 | cut -f2- | cut -b-8 | sort | uniq -c | wc -l
+    45
+
+
+9 byte messages
+---------------
+
+::
+    $ cut -f2- snippet2 | grep ^9 | cut -f2- | cut -b-8 | sort | uniq -c
+      17549 01 04 05
+      17497 12 04 16
+      10838 15 04 11
+       2976 1a 04 1e
+       2902 21 04 25
+    $ cut -f2- snippet3 | grep ^9 | cut -f2- | cut -b-8 | sort | uniq -c
+       5678 01 04 05
+       5678 12 04 16
+	944 21 04 25
+
+"1a 04 1e" and "15 04 11" are not there in the dumps missing wind+dst200, so likely
+they contain such data.
+
+10 byte messages
+----------------
+
+Where wind+depth+stw (+gps) is available:
+
+::
+    $ cut -f2- snippet2 | grep ^10 | cut -f2- | sort | uniq -c | sort -rn
+       2956 17 05 12 00 80 ff ff ff 7f 81
+       2955 23 05 26 ff ff 00 00 80 80 81
+	  5 2e 05 2b 0f 19 3f 00 16 3f 81
+	  5 2d 05 28 02 03 86 00 13 94 81
+
+Whereas in the file with only GND10 and GPS19x:
+
+::
+    $ cut -f2- snippet3 | grep ^10 | cut -f2- | sort | uniq -c | sort -rn
+	946 23 05 26 ff ff 00 00 80 80 81
+	946 17 05 12 00 80 ff ff ff 7f 81
+
+
+These messages are "always" the same, on a moving boat.
+
+Could "17 05 12" or "23 05 26" be display luminosity level?
+
+No other 10 byte messages seen. (that wasn't obvious transmission errors)
+
+
+11 byte messages
+----------------
+
+No messages of length 11 have been seen.
+
+
+12 byte messages
+----------------
+Examples:
+
+::
+    24 07 23 09 27 05 1b 07 18 00 2f 81
+    24 07 23 09 27 06 1b 07 18 00 2c 81
+    24 07 23 09 27 07 1b 07 18 00 2d 81
+    24 07 23 09 27 08 1b 07 18 00 22 81
+
+
+
+13 byte messages
+----------------
+
+Initially seen as a 12 byte message, but more frequent in a 13 byte form:
+
+::
+    20 08 28 3b db c2 0a c7 8e e0 00 81
+    20 08 28 3b 5e cc 0a 58 9a e0 00 81
+    20 08 28 3b 61 cc 0a 67 9a e0 00 81
+    20 08 28 3b e5 c2 0a cf 8e e0 00 b7 81
+    20 08 28 3b e6 c2 0a d0 8e e0 00 ab 81
+    20 08 28 3b e7 c2 0a d1 8e e0 00 ab 81
+    20 08 28 3b e9 c2 0a d3 8e e0 00 a7 81
+
+In a different dump (no wind/dst200, only gps19x)
+
+::
+    20 08 28 3b 1f c3 0a fe 8e e0 00 7d 81
+    20 08 28 3b 21 c3 0a ff 8e e0 00 42 81
+    20 08 28 3b 22 c3 0a 00 8f e0 00 bf 81
+    20 08 28 3b 23 c3 0a 01 8f e0 00 bf 81
+
+
