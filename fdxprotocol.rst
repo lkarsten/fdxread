@@ -62,7 +62,7 @@ Message format
 Based on packet dumps from a Garmin gWind setup:
 
 * byte 0-2: source and/or packet type.
-* bytes 3-n: data. 
+* bytes 3-n: data.
 * byte n-1: always 0x81
 
 Messages are varying. Between 6 and 9 bytes (inclusive) being the most common sizes.
@@ -80,31 +80,6 @@ Messages are varying. Between 6 and 9 bytes (inclusive) being the most common si
 	    749 10
 	    748 12
 	    747 13
-
-
-Domain analysis
-===============
-
-Q: When looking at the individual bytes, are the 16 different values used in an uniform manner?
-
-byte0 er overrepresentert med 0, så 1,2 og 7 i skikt to. Alle verdier er brukt.
-byte1 - verdien 2 er overrepresentert, så 0,1,7,5,3,9,4,8. a-f og 6 er lite brukt.
-byte2 (idx 4) - overveldende bruk av 0. alle finnes. 
-byte3 (idx 5) - 3 og 4 i skikt en, 1,2,5,8,7 i skikt to. lite brukt: a-f, 0, 9 og 6.
-
-omtrent her begynner vi å treffe bodybytes, og dette blir mindre interessant.
-
-
-Data that I expect to be in here:
-* wind direction
-* wind speed
-* speed through water
-* water temperature
-* depth under keel.
-* gps position
-* (gps sats in view)
-* speed over ground (from gps)
-* perhaps: heading (from gps)
 
 
 Message length overview
