@@ -33,7 +33,7 @@ that ``fdxdecode.py`` expects, and feed it into it. ``fdxdecode.py`` will decode
 and (currently) output a small JSON snippet per line, which ``nmeaformat.py`` will turn into
 NMEA0183.
 
-If you want to reply an old hex file::
+If you want to replay an old hex file::
 
     $ ./olddumpformat.py dumps/foo.dump  | ./fdxdecode.py  | ./nmeaformat.py 2>/dev/null
     $FVMWV,214.56,R,1.13,K,A,*3
