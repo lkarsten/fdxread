@@ -128,6 +128,9 @@ def main():
                  "C", "TempDir"),
                 ]
 
+        elif sample["mdesc"] in ["dst200depth2", "gnd10msg2", "windmsg3", "wind40s"]:
+            continue
+
         else:
             if sample["mdesc"] in ["emptymsg0", "gpsping", "static1s",
                                    "windsignal"]:
