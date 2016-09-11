@@ -1,30 +1,19 @@
 Garmin GND10 connector
 ======================
 
-This is software to read the output from the USB port on a Garmin GND10 bridge.
+Read the Garmin GND10 bridge USB data.
 
-The GND10 bridge is typically installed as part of a Garmin gWind package with
-(possibly wireless) anemometer, airmar paddlewheel and a Garmin GNX20 display. It
-translates between the Nexus FDX protocol and NMEA2000. My setup also has a Garmin
-GPS19x unit.
+A GND10 unit translates between Nexus FDX and NMEA2000. The USB port on it outputs
+something called FDX, which is reverse engineered here.
 
-Everything is deduced from staring at the arriving bytes while disconnecting
-some units and motoring in circles. Something was pretty simple to figure out,
-some other metrics I'm still not sure is right. Use at your own risk.
-
-Tested on Linux and OSX.
-
-On a side note, I believe this is the only open/freely available document on
-the packet format of the Fast Data eXchange (FDX) protocol used in Nexus Marine AB's
-Nexus products. See ``fdxprotocol.rst`` for notes taken while working this out.
-
+Requires python-serial. Tested on Linux and OSX.
 
 Running it
 ----------
 
 Right now the different tools in here should be chained together with unix
 pipes. To make it more user friendly down the road this may change, but for the
-time being, try::
+time being, use::
 
     $ ./dumpserial.py | ./fdxdecode.py | ./nmeaformat.py 2>/dev/null
 
@@ -47,6 +36,23 @@ server on port 10110, and pipe the output from ``nmeaformat.py`` to it using net
 OpenCPN can read it easily, and I get to know where I am on the map.
 
 .. _kplex: http://www.stripydog.com/kplex/
+
+
+Background information
+----------------------
+
+The GND10 bridge is typically installed as part of a Garmin gWind package with
+(possibly wireless) anemometer, airmar paddlewheel and a Garmin GNX20 display. It
+translates between the Nexus FDX protocol and NMEA2000. My setup also has a Garmin
+GPS19x unit.
+
+Everything is deduced from staring at the arriving bytes while disconnecting
+some units and motoring in circles. Something was pretty simple to figure out,
+some other metrics I'm still not sure is right. Use at your own risk.
+
+On a side note, I believe this is the only open/freely available document on
+the packet format of the Fast Data eXchange (FDX) protocol used in Nexus Marine AB's
+Nexus products. See ``fdxprotocol.rst`` for notes taken while working this out.
 
 License
 -------
