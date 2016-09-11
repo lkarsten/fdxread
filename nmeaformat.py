@@ -82,7 +82,7 @@ def main():
             res = [("$GPGLL",
                     spos[0][:9], gpspos.to_string("H")[0],
                     spos[1][:9], gpspos.to_string("H")[1],
-                    gpstime.strftime("%H%M%S.00"),
+                    gpstime.strftime("%H%M%S"),
                     "A", "")]
 
         elif sample["mdesc"] == "gpscog":
@@ -92,7 +92,7 @@ def main():
             fmt = "%d%M"
             spos = gpspos.to_string(fmt)
             res = [("$GPRMC",
-                    gpstime.strftime("%H%M%S.00"), "A",
+                    gpstime.strftime("%H%M%S"), "A",
                     spos[0][:9], gpspos.to_string("H")[0],
                     spos[1][:9], gpspos.to_string("H")[1],
                     "%.2f" % sample["sog"],
