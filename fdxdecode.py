@@ -21,6 +21,7 @@ Garmin GND10 protocol decoder.
 
 Decode the bitstream seen from the Garmin GND10 USB port.
 """
+import json
 import unittest
 from datetime import datetime
 from pprint import pprint
@@ -28,8 +29,6 @@ from sys import argv, stdin, stdout
 
 from LatLon import LatLon, Latitude, Longitude
 from bitstring import BitArray
-
-import json
 
 RAD_2_DEG=57.2957795130823208767981548141051703
 
