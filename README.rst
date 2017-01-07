@@ -6,7 +6,7 @@ Read the Garmin GND10 bridge USB data.
 A GND10 unit translates between Nexus FDX and NMEA2000. The USB port on it outputs
 something called FDX, which is reverse engineered here.
 
-Requires python-serial. Tested on Linux and OSX.
+Requires python-serial and LatLon (1.0.2 or newer). Tested on Linux and OSX.
 
 Running it
 ----------
