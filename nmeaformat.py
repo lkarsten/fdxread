@@ -39,16 +39,17 @@ def checksum(sentence):
 
 def nmeapos(pos):
     """
-    >>> nmeapos(LatLon.LatLon("59.8666333333", "10.7608"))
-    ['5952.00', 'N', '1045.65', 'E']
+    >>> nmeapos(LatLon("54.1024833333", "10.8079"))
+    ['5406.15', 'N', '1048.47', 'E']
     """
     assert isinstance(pos, LatLon)
+
     def fmt(p):
         s = p.to_string("%d")
         assert len(s) >= 1
         decmin = float(p.to_string("%M"))
         assert decmin / 10. <= 60
-        s += "%.2f" % decmin
+        s += ("%.2f" % decmin).zfill(5)
         return s
 
     return [fmt(pos.lat), pos.to_string("H")[0],
