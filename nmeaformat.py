@@ -37,6 +37,24 @@ def checksum(sentence):
     return "%s%02X" % (sentence, cksum)
 
 
+def nmeapos(pos):
+    """
+    >>> nmeapos(LatLon.LatLon("59.8666333333", "10.7608"))
+    ['5952.00', 'N', '1045.65', 'E']
+    """
+    assert isinstance(pos, LatLon)
+    def fmt(p):
+        s = p.to_string("%d")
+        assert len(s) >= 1
+        decmin = float(p.to_string("%M"))
+        assert decmin / 10. <= 60
+        s += "%.2f" % decmin
+        return s
+
+    return [fmt(pos.lat), pos.to_string("H")[0],
+            fmt(pos.lon), pos.to_string("H")[1]]
+
+
 def main():
     gpstime = None
     gpspos = None
@@ -73,37 +91,23 @@ def main():
             continue
 
         elif sample["mdesc"] == "gpspos":
-            if gpstime is None:
-                continue
-            # $--GLL,llll.ll,a,yyyyy.yy,a,hhmmss.ss,a,m,*hh<CR><LF>
-            # we have decimal degrees, ala: 59.8666333333. N since pos number.
             lat = Latitude(sample["pos"][0])
             lon = Longitude(sample["pos"][1])
             gpspos = LatLon(lat, lon)
-
-            fmt = "%d%M"
-            spos = gpspos.to_string(fmt)
-            res = [("$GPGLL",
-                    spos[0][:9], gpspos.to_string("H")[0],
-                    spos[1][:9], gpspos.to_string("H")[1],
-                    gpstime.strftime("%H%M%S"),
-                    "A", "")]
+            continue
 
         elif sample["mdesc"] == "gpscog":
             if gpstime is None or gpspos is None:
                 continue
-            # Nasty
-            fmt = "%d%M"
-            spos = gpspos.to_string(fmt)
-            res = [("$GPRMC",
-                    gpstime.strftime("%H%M%S"), "A",
-                    spos[0][:9], gpspos.to_string("H")[0],
-                    spos[1][:9], gpspos.to_string("H")[1],
-                    "%.2f" % sample["sog"],
+
+            rmctuple = ("$GPRMC", gpstime.strftime("%H%M%S"), "A") + \
+                    tuple(nmeapos(gpspos)) + \
+                    ("%.2f" % sample["sog"],
                     "%.2f" % sample["cog"],
                     gpstime.strftime("%d%m%y"),
                     "0.0",  # magn var
-                    "E")]
+                    "E")
+            res += [rmctuple]
 
             #  $--HDT,x.x,T*hh<CR><LF>
             res += [("$GPHDT", "%.2f" % (sample["cog"]), "T")]
