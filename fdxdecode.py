@@ -160,6 +160,8 @@ def FDXDecode(pdu):
 
     elif mtype == 0x070304:
         mdesc = "dst200depth"   # previously "dst200msg3"
+        if strbody in ['ffff000081']:
+            return
         body = checklength(pdu, 8)
         keys = intdecoder(body, width=16)
         # depth is confirmed identical to onboard display (5.3m.) needs
