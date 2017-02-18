@@ -24,13 +24,12 @@ Decode the bitstream seen from the Garmin GND10 USB port.
 import json
 import unittest
 from datetime import datetime
+from math import degrees, radians
 from pprint import pprint
 from sys import argv, stdin, stdout
 
 from LatLon import LatLon, Latitude, Longitude
 from bitstring import BitArray
-
-RAD_2_DEG=57.2957795130823208767981548141051703
 
 class ParseError(Exception):
     pass
@@ -46,6 +45,18 @@ def fahr2celcius(temp):
     assert temp < 150
     return (temp - 32) * (5/9.)
 
+def fahr2kelvin(temp):
+    assert type(temp) in [float, int]
+    assert temp < 150
+    return (temp + 459.67) * (5/9.)
+
+def knots2m(knots):
+    """knots => m/s
+
+    >>> knots2m(10)
+    5.144444444444445
+    """
+    return knots * (1852.0/3600)
 
 def checklength(pdu, speclen):
     "pdu is hex encoded, 4 bits per char."
@@ -126,11 +137,17 @@ def FDXDecode(pdu):
         windspeed = body[0:16].uintle
         if windspeed == 2**16-1:
             windspeed = float('NaN')
-        ratio = 360.0 / 2**16
+        windspeed *= 0.01
 
-        keys += [('aws_hi', body[0:16].uintle * 0.01)]
-        keys += [('awa', body[16:32].uintle * ratio)]
+        awa = body[16:32].uintle * (360.0 / 2**16)
+
+        keys += [('awa', awa)]
+        keys += [('aws_hi', windspeed)]
         keys += [('aws_lo', body[32:46].uintle * 0.01)]
+
+        keys += [('environment.wind.angleApparent', radians(awa))]
+        keys += [('environment.wind.speedApparent', knots2m(windspeed))]
+
 
     elif mtype == 0x020301:
         mdesc = "dst200depth2"
@@ -173,6 +190,8 @@ def FDXDecode(pdu):
         keys += [('depth', depth * 0.01)]
         keys += [('stw', body[16:24].uintle)]  # maybe
         keys += [('unknown2', body[24:32].uintle)] # quality?
+
+        keys = [('environment.depth.belowTransducer', depth * 0.01)]
 
     elif mtype == 0x080109:
         mdesc = "static1s"  # ex windmsg0, stalemsg0
@@ -240,6 +259,7 @@ def FDXDecode(pdu):
 
         pressure = body[0:16].uintle * 0.01
         keys += [('airpressure', pressure)]
+        keys += [('environment.outside.pressure', pressure)]
 
         yy = strbody[4:6]  # save us a bitwise lookup.
         if yy != 'ff':
@@ -249,8 +269,8 @@ def FDXDecode(pdu):
             keys += [("fault", "null is 0x%s, expected 0x00" % null)]
         temp = body[32:40].uintle  # zz
         keys += [('temp_f?', "%.2f" % temp)]
-        temp = fahr2celcius(temp)
-        keys += [('temp_c', temp)]
+        keys += [('temp_c', fahr2celcius(temp))]
+        keys += [('environment.outside_temperature', fahr2kelvin(temp))]
 
     elif mtype == 0x1c031f:
         mdesc = "wind40s"
@@ -282,6 +302,8 @@ def FDXDecode(pdu):
         keys += [("elevation", body[64:72].uintle)]  # in feet
 
         keys += [("pos", LatLon(lat, lon).to_string())]
+        keys += [("navigation.position.latitude", str(lat))]
+        keys += [("navigation.position.longitude", str(lon))]
         #keys += [("gmapspos", "https://www.google.com/maps?ie=UTF8&hq&q=%s,%s+(Point)&z=11" % (lat, lon))]
 
     elif mtype == 0x210425:
@@ -299,8 +321,15 @@ def FDXDecode(pdu):
         if cog in [0, 255]:
             cog = float("NaN")
 
-        keys += [('cog', cog * (360/255.))]
-        keys += [('sog', sog * 0.01)]
+        # Scale the values.
+        cog *= 360/255.
+        sog *= 0.01
+
+        keys += [('cog', cog)]
+        keys += [('sog', sog)]
+
+        keys += [('navigation.courseOverGroundTrue', radians(cog))]
+        keys += [('navigation.speedOverGroundTrue', knots2m(sog))]
 
     elif mtype == 0x230526:
         mdesc = "static2s"
@@ -329,6 +358,8 @@ def FDXDecode(pdu):
             ts = datetime(year=year, month=month, day=day, hour=hour, minute=minute, second=second)
             keys = [("utctime", ts.isoformat())]
             keys += [("what?", body[56:64].uintle)]
+            keys = [("navigation.datetime.value", ts.isoformat())]
+
         except (ValueError, AssertionError) as e:
             keys = [('ParseFault', str(e))]
 
@@ -354,8 +385,8 @@ def FDXDecode(pdu):
         mdesc = "windmsg3"
         body = checklength(pdu, 8)
         keys = intdecoder(body, width=16)
-        keys += [('xx', body[0:16].uintle * RAD_2_DEG * 0.0001 )]
-        keys += [('yy', body[16:32].uintle * RAD_2_DEG * 0.0001 )]
+        keys += [('xx', radians(body[0:16].uintle) * 0.0001 )]
+        keys += [('yy', radians(body[16:32].uintle) * 0.0001 )]
 
     elif mtype == 0x769e81:
         mdesc = "bootup0"
