@@ -453,7 +453,8 @@ def StreamDecoder():
             return
 
 if __name__ == "__main__":
-    if 0:
+    if len(argv) > 1 and argv[1] == "--test":
+        argv.pop(argv.index("--test"))
         import doctest
         doctest.testmod()
         unittest.main()
