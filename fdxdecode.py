@@ -23,6 +23,7 @@ Decode the bitstream seen from the Garmin GND10 USB port.
 """
 import json
 import unittest
+import serial
 from datetime import datetime
 from math import degrees, radians
 from pprint import pprint
@@ -36,6 +37,9 @@ class DataError(Exception):
     pass
 
 class FailedAssumptionError(Exception):
+    pass
+
+class FDXError(Exception):
     pass
 
 def fahr2celcius(temp):
@@ -399,6 +403,51 @@ def FDXDecode(pdu):
     keys["mdesc"] = mdesc
     return keys
 
+class GND10decoder(object):
+    stream = None
+#    decode = FDXDecode   # Reference to avoid import
+
+    n_msg = 0
+    n_errors = 0
+
+    def __init__(self, serialport):
+        self.stream = serial.Serial(port=serialport)
+
+        # Keep these for logging purposes.
+        self.serialport = serialport
+        self.starttime = datetime.now()
+
+    def __del__(self):
+        if self.stream is not None:
+            self.stream.close()
+
+    def recvmsg(self):
+        assert self.stream is not None
+        buf = bytearray()
+
+        while True:
+            try:
+                chunk = self.stream.read(1)  # Inefficient but easily understood.
+            except Exception as e:
+                # TODO: Handle serial port issues gracefully. (close and reopen...)
+                raise
+
+            if chunk is None:
+                break   # Leads to StopIteration (it should ..)
+
+            buf.append(chunk)
+            if buf[:-1] is 0x81:
+                try:
+                    fdxmsg = FDXDecode(buf)
+                except (DataError, FailedAssumptionError, NotImplementedError) as e:
+                    # This class concerns itself with the readable only.
+                    self.n_errors += 1
+                else:
+                    self.n_msg += 1
+                    yield fdxmsg
+
+                # If there was an exception, forget the unparsable message and continue.
+                buf = bytearray()
 
 def StreamDecoder():
     """
@@ -456,4 +505,12 @@ if __name__ == "__main__":
         unittest.main()
         exit()
 
-    StreamDecoder()
+    elif len(argv) > 1 and argv[1] == "--test":
+        port = GND10decoder("/dev/tty.usbmodem1411")
+        while True:
+            buf = port.recvmsg()
+            if buf is None:
+                break
+            print buf
+    else:
+        StreamDecoder()
