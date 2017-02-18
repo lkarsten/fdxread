@@ -26,7 +26,7 @@ import unittest
 from datetime import datetime
 from math import degrees, radians
 from pprint import pprint
-from sys import argv, stdin, stdout
+from sys import argv, stdin, stdout, stderr
 
 from LatLon import LatLon, Latitude, Longitude
 from bitstring import BitArray
@@ -421,19 +421,19 @@ def StreamDecoder():
         #print "'%s'" % line, l
         ts, mlen, pdu = (float(l[0]), int(l[1]), l[2].replace(" ", ""))
         if not pdu[-2:] == '81':
-            print "# Skipping invalid input line: %s" % line
+            print >>stderr, "# Skipping invalid input line: %s" % line
             continue
 
         try:
             res = FDXDecode(pdu)
         except ParseError as e:
-            print "# ERR: %s %s" % (pdu, str(e))
+            print >>stderr, "# ERR: %s %s" % (pdu, str(e))
         except DataError as e:
-            print "# DataError: %s %s %s" % (pdu[:3], pdu[3:], str(e))
+            print >>stderr, "# DataError: %s %s %s" % (pdu[:3], pdu[3:], str(e))
         except NotImplementedError as e:
-            print "# INCOMPLETE: %s" % (str(e))
+            print >>stderr, "# INCOMPLETE: %s" % (str(e))
         except FailedAssumptionError as e:
-            print "# FAULT: %s assumption: %s" % (pdu, str(e))
+            print >>stderr, "# FAULT: %s assumption: %s" % (pdu, str(e))
         else:
             if res is not None:
 #                print "%.3f %s" % (ts, res)
