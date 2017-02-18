@@ -31,8 +31,6 @@ from sys import argv, stdin, stdout, stderr
 from LatLon import LatLon, Latitude, Longitude
 from bitstring import BitArray
 
-class ParseError(Exception):
-    pass
 
 class DataError(Exception):
     pass
@@ -426,8 +424,6 @@ def StreamDecoder():
 
         try:
             res = FDXDecode(pdu)
-        except ParseError as e:
-            print >>stderr, "# ERR: %s %s" % (pdu, str(e))
         except DataError as e:
             print >>stderr, "# DataError: %s %s %s" % (pdu[:3], pdu[3:], str(e))
         except NotImplementedError as e:
