@@ -387,8 +387,8 @@ def FDXDecode(pdu):
         mdesc = "windmsg3"
         body = checklength(pdu, 8)
         keys = intdecoder(body, width=16)
-        keys += [('xx', radians(body[0:16].uintle) * 0.0001 )]
-        keys += [('yy', radians(body[16:32].uintle) * 0.0001 )]
+        keys += [('xx', radians(body[0:16].uintle) * 0.0001)]
+        keys += [('yy', radians(body[16:32].uintle) * 0.0001)]
 
     elif mtype == 0x769e81:
         mdesc = "bootup0"
