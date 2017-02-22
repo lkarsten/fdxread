@@ -196,7 +196,7 @@ def FDXDecode(pdu):
         keys += [('stw', body[16:24].uintle)]  # maybe
         keys += [('unknown2', body[24:32].uintle)] # quality?
 
-        keys = [('environment.depth.belowTransducer', depth * 0.01)]
+        keys += [('environment.depth.belowTransducer', depth * 0.01)]
 
     elif mtype == 0x080109:
         mdesc = "static1s"  # ex windmsg0, stalemsg0
@@ -363,7 +363,7 @@ def FDXDecode(pdu):
             ts = datetime(year=year, month=month, day=day, hour=hour, minute=minute, second=second)
             keys = [("utctime", ts.isoformat())]
             keys += [("what?", body[56:64].uintle)]
-            keys = [("navigation.datetime.value", ts.isoformat())]
+            keys += [("navigation.datetime.value", ts.isoformat())]
 
         except (ValueError, AssertionError) as e:
             keys = [('ParseFault', str(e))]
