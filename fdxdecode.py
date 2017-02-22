@@ -22,6 +22,7 @@ Garmin GND10 protocol decoder.
 Decode the bitstream seen from the Garmin GND10 USB port.
 """
 import json
+import logging
 import unittest
 import serial
 from datetime import datetime
@@ -498,6 +499,10 @@ def StreamDecoder():
             return
 
 if __name__ == "__main__":
+    if "-v" in argv:
+        argv.pop(argv.index("-v"))
+        logging.basicConfig(level=logging.DEBUG)
+
     if len(argv) > 1 and argv[1] == "--test":
         argv.pop(argv.index("--test"))
         import doctest
