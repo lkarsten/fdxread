@@ -503,6 +503,7 @@ class GND10decoder(object):
                     if fdxmsg is not None:
                         self.n_msg += 1
                         self.last_yield = time()
+                        assert isinstance(fdxmsg, dict)
                         yield fdxmsg
 
                 buf = bytearray()
@@ -539,9 +540,9 @@ class HEXdecoder(object):
     def __init__(self, inputfile, frequency=10.0, seek=0):
         self.inputfile = inputfile
         self.seek = seek
+        self.frequency = frequency
         with open(self.inputfile):
             pass  # Catch permission problems early.
-        self.frequency = frequency
 
     def recvmsg(self):
         reader = dumpreader(self.inputfile, trim=True, seek=self.seek)
@@ -557,12 +558,13 @@ class HEXdecoder(object):
                 if fdxmsg is not None:
                     self.n_msg += 1
                     self.last_yield = time()
+                    assert isinstance(fdxmsg, dict)
                     yield fdxmsg
 
                     # Pace the output.
                     sleep(1.0/self.frequency)
 
-        print >>stderr, "File replay completed. n_msg: %s n_errors: %s" % (self.n_msg, self.n_errors)
+        #print >>stderr, "File replay completed. n_msg: %s n_errors: %s" % (self.n_msg, self.n_errors)
 
 def StreamDecoder():
     """
@@ -623,6 +625,16 @@ class FDXDecodeTest(unittest.TestCase):
         r = FDXDecode("24 07 23 0f 1b 17 11 08 18 00 02 81".replace(" ", ""))
         assert r["utctime"] == "2016-08-17T15:27:23"
 
+    def test_hexdecode(self):
+        port = HEXdecoder("dumps/onsdagsregatta-2016-08-17.dump", frequency=10, seek=4e4)
+        reader = port.recvmsg()
+        for msg in reader:
+            msg = skfilter(msg)
+            if msg is None:
+                logging.debug("empty decoded frame")
+                continue
+            assert type(msg) == dict
+            print msg
 
 if __name__ == "__main__":
     if "-v" in argv:
@@ -646,17 +658,6 @@ if __name__ == "__main__":
             assert type(buf) == dict
             print buf
         print "EXIT: Port closed or empty"
-
-    elif len(argv) > 1 and argv[1] == "--replay":
-        port = HEXdecoder("dumps/onsdagsregatta-2016-08-17.dump", frequency=10, seek=4e4)
-        for msg in port.recvmsg():
-            msg = skfilter(msg)
-            if msg is None:
-                logging.debug("empty decoded frame")
-                continue
-            assert type(msg) == dict
-            print msg
-        print "File ran out"
 
     else:
         StreamDecoder()
