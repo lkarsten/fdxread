@@ -620,7 +620,7 @@ class FDXDecodeTest(unittest.TestCase):
         with self.assertRaises(DataError):
             FDXDecode("81 81")
 
-        r = FDXDecode("2407230f1b17110818000281")
+        r = FDXDecode("24 07 23 0f 1b 17 11 08 18 00 02 81".replace(" ", ""))
         assert r["utctime"] == "2016-08-17T15:27:23"
 
 
