@@ -476,7 +476,7 @@ class GND10decoder(object):
                 empty_reads += 1
                 logging.info("serial read timeout after %.3f seconds" %
                              self.stream.timeout)
-                if empty_reads > 10:  # Non-magic
+                if empty_reads > 4:  # Non-magic
                     logging.info("Excessive empty reads, resetting port")
                     self.close()
                 continue
