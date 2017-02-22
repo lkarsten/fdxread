@@ -98,6 +98,9 @@ def FDXDecode(pdu):
     if pdu[-2:] != '81':
         raise DataError("missing tailer")
 
+    if " " in pdu:
+        raise DataError("Whitespace in message")
+
     if len(pdu) < 6:
         raise DataError("short message <6 bytes")
 
@@ -569,6 +572,18 @@ def StreamDecoder():
             stdout.flush()
         except IOError:
             return
+
+class FDXDecodeTest(unittest.TestCase):
+    def test_simple(self):
+        with self.assertRaises(DataError):
+            FDXDecode("81")
+
+        with self.assertRaises(DataError):
+            FDXDecode("81 81")
+
+        r = FDXDecode("2407230f1b17110818000281")
+        assert r["utctime"] == "2016-08-17T15:27:23"
+
 
 if __name__ == "__main__":
     if "-v" in argv:
