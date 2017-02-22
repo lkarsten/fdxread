@@ -46,8 +46,7 @@ def dumpreader(inputfile):
             frame += " 81"
             s = frame.replace(" ", "")
             assert len(s) % 2 == 0
-
-            yield (ts, len(s) // 2, frame)
+            yield (ts, len(s) // 2, s)
 
             if ts < 2.0:  # The format has differential time stamps.
                 # Subsequent frames in a single read arrived without delay.
