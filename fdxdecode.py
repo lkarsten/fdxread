@@ -443,7 +443,7 @@ class GND10decoder(object):
                 try:
                     self.open()
                 except serial.serialutil.SerialException as e:
-                    if e.errno == 2 or "[Errno 6] Device not configured" in e.message:
+                    if e.errno in [2, 16] or "[Errno 6] Device not configured" in e.message:
                         logging.warning(e.strerror)
                         self.close()
                         sleep(self.reset_sleep)   # Retry opening the port in a while
@@ -455,7 +455,7 @@ class GND10decoder(object):
             try:
                 chunk = self.stream.read(1)  # Inefficient but easily understood.
             except serial.serialutil.SerialException as e:
-                if e.errno == 2 or "[Errno 6] Device not configured" in e.message:
+                if e.errno in [2, 16] or "[Errno 6] Device not configured" in e.message:
                     self.close()
                     # No sleep, the one in the port open loop will be used.
                     continue
