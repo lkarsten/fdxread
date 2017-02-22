@@ -28,8 +28,11 @@ from pprint import pprint
 from sys import argv, stderr
 from os.path import exists
 
-def dumpreader(inputfile):
-    for line in open(inputfile):
+def dumpreader(inputfile, seek=0):
+    fp = open(inputfile)
+    fp.seek(seek)
+
+    for line in fp:
         if line.startswith("#"):
             print line,
             continue
