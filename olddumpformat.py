@@ -28,7 +28,7 @@ from pprint import pprint
 from sys import argv, stderr
 from os.path import exists
 
-def dumpreader(inputfile, seek=0):
+def dumpreader(inputfile, trim=False, seek=0):
     fp = open(inputfile)
     fp.seek(seek)
 
@@ -46,15 +46,21 @@ def dumpreader(inputfile, seek=0):
             frame = frame.strip()
             if frame is "":
                 continue
+
             frame += " 81"
+
             s = frame.replace(" ", "")
             assert len(s) % 2 == 0
+
+            if trim:
+                frame = frame.replace(" ", "")
 
             yield (ts, len(s) // 2, frame)
 
             if ts < 2.0:  # The format has differential time stamps.
                 # Subsequent frames in a single read arrived without delay.
                 ts = "0.000000"
+
 
 if __name__ == "__main__":
     if len(argv) < 2 or not exists(argv[-1]):

@@ -544,7 +544,8 @@ class HEXdecoder(object):
         self.frequency = frequency
 
     def recvmsg(self):
-        for ts, mlen, frame in dumpreader(self.inputfile, seek=self.seek):
+        reader = dumpreader(self.inputfile, trim=True, seek=self.seek)
+        for ts, mlen, frame in reader:
             assert len(frame) > 0
             #print "trying to decode %i bytes: %s" % (len(frame), frame)
             try:
@@ -557,6 +558,7 @@ class HEXdecoder(object):
                     self.n_msg += 1
                     self.last_yield = time()
                     yield fdxmsg
+
                     # Pace the output.
                     sleep(1.0/self.frequency)
 
