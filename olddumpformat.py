@@ -32,7 +32,7 @@ def dumpreader(inputfile, seek=0):
     fp = open(inputfile)
     fp.seek(seek)
 
-    for line in fp:
+    for line in fp.readlines():
         if line.startswith("#"):
             print line,
             continue
