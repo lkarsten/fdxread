@@ -502,6 +502,24 @@ class GND10decoder(object):
 
                 buf = bytearray()
 
+def skfilter(msg):
+    """
+    Filter a dictionary to only include Signal K attributes.
+    """
+    if msg is None:
+        return
+
+    assert isinstance(msg, dict)
+    for k in msg.keys():
+        # Shortened to avoid "vessels.self" on all keys. Fix when neccessary.
+        if k.startswith("environment") or k.startswith("navigation"):
+            continue
+        del msg[k]
+
+    if len(msg) == 0:
+        return None
+    return msg
+
 
 def StreamDecoder():
     """
@@ -565,13 +583,11 @@ if __name__ == "__main__":
     elif len(argv) > 1 and argv[1] == "--classtest":
         port = GND10decoder("/dev/tty.usbmodem1411")
         for buf in port.recvmsg():
-            assert type(buf) == dict
-            for k in buf.keys():
-                if k.startswith("environment") or k.startswith("navigation"):
-                    continue
-                del buf[k]
-            if len(buf) == 0:
+            buf = skfilter(buf)
+            if buf is None:
+                logging.debug("empty decoded frame")
                 continue
+            assert type(buf) == dict
             print buf
         print "EXIT: Port closed or empty"
     else:
