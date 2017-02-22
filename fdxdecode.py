@@ -30,7 +30,7 @@ from datetime import datetime
 from math import degrees, radians
 from pprint import pprint
 from sys import argv, stdin, stdout, stderr
-from time import sleep
+from time import sleep, time
 
 from LatLon import LatLon, Latitude, Longitude
 from bitstring import BitArray
@@ -412,8 +412,10 @@ class GND10decoder(object):
     n_errors = 0
     stream = None
 
+    last_yield = None
+
     # Seconds
-    read_timeout = 0.5
+    read_timeout = 0.3
     reset_sleep = 2
 
     def __init__(self, serialport):
@@ -446,6 +448,11 @@ class GND10decoder(object):
                     if e.errno in [2, 16] or "[Errno 6] Device not configured" in e.message:
                         logging.warning(e.strerror)
                         self.close()
+                        if self.last_yield is None or \
+                          self.last_yield < (time() + self.read_timeout):
+                            print "yielding none"
+                            self.last_yield = time()
+                            yield None
                         sleep(self.reset_sleep)   # Retry opening the port in a while
                         continue
                     else:
@@ -490,6 +497,7 @@ class GND10decoder(object):
                 else:
                     if fdxmsg is not None:
                         self.n_msg += 1
+                        self.last_yield = time()
                         yield fdxmsg
 
                 buf = bytearray()
