@@ -448,10 +448,11 @@ class GND10decoder(object):
                     if e.errno in [2, 16] or "[Errno 6] Device not configured" in e.message:
                         logging.warning(e.strerror)
                         self.close()
-                        if self.last_yield is None or \
-                          self.last_yield < (time() + self.read_timeout):
-                            print "yielding none"
-                            self.last_yield = time()
+                        if self.last_yield < (time() + self.read_timeout):
+                            now = time()
+                            if self.last_yield > (now - 0.05):  # Pace the iterator if nothing is working.
+                                sleep(0.05)
+                            self.last_yield = now
                             yield None
                         sleep(self.reset_sleep)   # Retry opening the port in a while
                         continue
