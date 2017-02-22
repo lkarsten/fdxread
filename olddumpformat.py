@@ -34,22 +34,17 @@ def dumpreader(inputfile):
             print line,
             continue
 
-#        line = line.strip()
-#        if len(line) < 12:   # why?
-#            continue
+        if 0:
+            print '\n"%s"' % line
 
-#        print '\n"%s"' % line
         ts, mlen, pdu = line.split(None, 2)
 
         for frame in pdu.split(" 81"):
             frame = frame.strip()
             if frame is "":
                 continue
-
             frame += " 81"
-
             s = frame.replace(" ", "")
-
             assert len(s) % 2 == 0
 
             yield (ts, len(s) // 2, frame)
