@@ -25,10 +25,12 @@ import json
 import logging
 import unittest
 import serial
+from binascii import hexlify
 from datetime import datetime
 from math import degrees, radians
 from pprint import pprint
 from sys import argv, stdin, stdout, stderr
+from time import sleep
 
 from LatLon import LatLon, Latitude, Longitude
 from bitstring import BitArray
@@ -406,49 +408,92 @@ def FDXDecode(pdu):
 
 class GND10decoder(object):
     stream = None
-#    decode = FDXDecode   # Reference to avoid import
-
     n_msg = 0
     n_errors = 0
+    stream = None
+
+    # Seconds
+    read_timeout = 0.5
+    reset_sleep = 2
 
     def __init__(self, serialport):
-        self.stream = serial.Serial(port=serialport)
-
-        # Keep these for logging purposes.
         self.serialport = serialport
-        self.starttime = datetime.now()
 
     def __del__(self):
         if self.stream is not None:
             self.stream.close()
 
-    def recvmsg(self):
+    def open(self):
+        self.stream = serial.Serial(port=self.serialport,
+                                    timeout=self.read_timeout)
         assert self.stream is not None
+
+    def close(self):
+        if self.stream is not None:
+            self.stream.close()
+            del self.stream
+        self.stream = None
+
+    def recvmsg(self):
         buf = bytearray()
+        empty_reads = 0
 
         while True:
+            while self.stream is None:
+                try:
+                    self.open()
+                except serial.serialutil.SerialException as e:
+                    if e.errno == 2 or "[Errno 6] Device not configured" in e.message:
+                        logging.warning(e.strerror)
+                        self.close()
+                        sleep(self.reset_sleep)   # Retry opening the port in a while
+                        continue
+                    else:
+                        logging.error("errno: %s message: %s all: %s" % (e.errno, e.message, str(e)))
+                        raise
+
             try:
                 chunk = self.stream.read(1)  # Inefficient but easily understood.
-            except Exception as e:
-                # TODO: Handle serial port issues gracefully. (close and reopen...)
-                raise
+            except serial.serialutil.SerialException as e:
+                if e.errno == 2 or "[Errno 6] Device not configured" in e.message:
+                    self.close()
+                    # No sleep, the one in the port open loop will be used.
+                    continue
+                else:
+                    logging.error("errno: %s message: %s all: %s" % (e.errno, e.message, str(e)))
+                    raise
 
-            if chunk is None:
-                break   # Leads to StopIteration (it should ..)
+            assert chunk is not None
 
+            if len(chunk) == 0:
+                empty_reads += 1
+                logging.info("serial read timeout after %.3f seconds" %
+                             self.stream.timeout)
+                if empty_reads > 10:  # Non-magic
+                    logging.info("Excessive empty reads, resetting port")
+                    self.close()
+                continue
+            self.empty_reads = 0
+
+            assert len(chunk) > 0
             buf.append(chunk)
-            if buf[:-1] is 0x81:
+            #print len(chunk), self.n_msg, self.n_errors
+
+            if 0x81 in buf:
+                #print "trying to decode %i bytes" % len(buf)
                 try:
-                    fdxmsg = FDXDecode(buf)
+                    fdxmsg = FDXDecode(hexlify(buf))
                 except (DataError, FailedAssumptionError, NotImplementedError) as e:
                     # This class concerns itself with the readable only.
+                    logging.warning("Ignoring exception: %s" % str(e))
                     self.n_errors += 1
                 else:
-                    self.n_msg += 1
-                    yield fdxmsg
+                    if fdxmsg is not None:
+                        self.n_msg += 1
+                        yield fdxmsg
 
-                # If there was an exception, forget the unparsable message and continue.
                 buf = bytearray()
+
 
 def StreamDecoder():
     """
@@ -509,13 +554,17 @@ if __name__ == "__main__":
         doctest.testmod()
         unittest.main()
         exit()
-
-    elif len(argv) > 1 and argv[1] == "--test":
+    elif len(argv) > 1 and argv[1] == "--classtest":
         port = GND10decoder("/dev/tty.usbmodem1411")
-        while True:
-            buf = port.recvmsg()
-            if buf is None:
-                break
+        for buf in port.recvmsg():
+            assert type(buf) == dict
+            for k in buf.keys():
+                if k.startswith("environment") or k.startswith("navigation"):
+                    continue
+                del buf[k]
+            if len(buf) == 0:
+                continue
             print buf
+        print "EXIT: Port closed or empty"
     else:
         StreamDecoder()
