@@ -96,11 +96,11 @@ def intdecoder(body, width=8, signed=False):
 def FDXDecode(pdu):
     assert type(pdu) == str
 
+    if " " in pdu:
+        pdu = pdu.replace(" ", "")
+
     if pdu[-2:] != '81':
         raise DataError("missing tailer")
-
-    if " " in pdu:
-        raise DataError("Whitespace in message")
 
     if len(pdu) < 6:
         raise DataError("short message <6 bytes")
@@ -583,7 +583,7 @@ def StreamDecoder():
 
         l = line.split("\t", 3)
         #print "'%s'" % line, l
-        ts, mlen, pdu = (float(l[0]), int(l[1]), l[2].replace(" ", ""))
+        ts, mlen, pdu = (float(l[0]), int(l[1]), l[2])
         if not pdu[-2:] == '81':
             print >>stderr, "# Skipping invalid input line: %s" % line
             continue
@@ -622,7 +622,7 @@ class FDXDecodeTest(unittest.TestCase):
         with self.assertRaises(DataError):
             FDXDecode("81 81")
 
-        r = FDXDecode("24 07 23 0f 1b 17 11 08 18 00 02 81".replace(" ", ""))
+        r = FDXDecode("24 07 23 0f 1b 17 11 08 18 00 02 81")
         assert r["utctime"] == "2016-08-17T15:27:23"
 
     def test_hexdecode(self):
