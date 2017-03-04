@@ -1,12 +1,12 @@
 Garmin GND10 connector
 ======================
 
-Read the Garmin GND10 bridge USB data.
+This is software to use the USB port on Garmin GND10 gateways.
 
-A GND10 unit translates between Nexus FDX and NMEA2000. The USB port on it outputs
-something called FDX, which is reverse engineered here.
+The GND10 unit is used on boats and translates between Nexus FDX and NMEA2000.
+The USB port on it outputs something called FDX, which is reverse engineered here.
 
-Requires python-serial and LatLon (1.0.2 or newer). Tested on Linux and OSX.
+Requires python-serial and LatLon23, as specified in requirements.txt. Tested on Linux and OS X.
 
 Running it
 ----------
@@ -41,14 +41,11 @@ OpenCPN can read it easily, and I get to know where I am on the map.
 Background information
 ----------------------
 
-The GND10 bridge is typically installed as part of a Garmin gWind package with
-(possibly wireless) anemometer, airmar paddlewheel and a Garmin GNX20 display. It
-translates between the Nexus FDX protocol and NMEA2000. My setup also has a Garmin
-GPS19x unit.
+Everything here is deduced from staring at the arriving bytes while
+disconnecting some units and motoring in circles. Something was pretty simple
+to figure out, some other metrics I'm still not sure is right.
 
-Everything is deduced from staring at the arriving bytes while disconnecting
-some units and motoring in circles. Something was pretty simple to figure out,
-some other metrics I'm still not sure is right. Use at your own risk.
+Use at your own risk.
 
 On a side note, I believe this is the only open/freely available document on
 the packet format of the Fast Data eXchange (FDX) protocol used in Nexus Marine AB's
@@ -59,5 +56,5 @@ License
 
 The contents of this repository is licensed under GNU GPLv2. See the ``LICENSE`` file for more information.
 
-Copyright (C) 2016 Lasse Karstensen
+Copyright (C) 2016-2017 Lasse Karstensen
 
