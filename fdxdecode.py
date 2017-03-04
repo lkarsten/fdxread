@@ -666,17 +666,6 @@ class FDXDecodeTest(unittest.TestCase):
         self.assertEqual(int(r["cog"]), 177)
         self.assertEqual(r["sog"], 2.68)
 
-    def test_hexdecode(self):
-        port = HEXdecoder("dumps/onsdagsregatta-2016-08-17.dump", frequency=10, seek=4e4)
-        reader = port.recvmsg()
-        for msg in reader:
-            msg = skfilter(msg)
-            if msg is None:
-                logging.debug("empty decoded frame")
-                continue
-            assert type(msg) == dict
-            print msg
-
 if __name__ == "__main__":
     if "-v" in argv:
         argv.pop(argv.index("-v"))
