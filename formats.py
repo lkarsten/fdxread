@@ -114,7 +114,7 @@ class format_json(object):
 
 
 class TestFormatters(unittest.TestCase):
-    def xtest_sk(self):
+    def test_sk(self):
         formatter = format_signalk_delta()
         r = formatter.handle({"mdesc": "gpspos", "lat": 54.102466, "lon": 10.8079})
         self.assertAlmostEqual(r['navigation.position.longitude'], 10.8079)

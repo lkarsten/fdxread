@@ -1,6 +1,6 @@
 
 # bitstring
-# pytest
+nose2
 LatLon23
 
 # fdxdecode.py, dumpserial.py
