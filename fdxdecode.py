@@ -45,9 +45,6 @@ class DataError(Exception):
 class FailedAssumptionError(Exception):
     pass
 
-class FDXError(Exception):
-    pass
-
 def fahr2celcius(temp):
     assert type(temp) in [float, int]
     assert temp < 150
