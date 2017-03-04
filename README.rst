@@ -8,8 +8,50 @@ The USB port on it outputs something called FDX, which is reverse engineered her
 
 Requires python-serial and LatLon23, as specified in requirements.txt. Tested on Linux and OS X.
 
+Installation
+------------
+
+::
+	git clone https://github.com/lkarsten/GND10read.git
+	cd GND10read
+	virtualenv --system-site-packages venv
+	. venv/bin/activate
+	pip install -r requirements.txt
+
+
 Running it
 ----------
+
+::
+	$ ./fdxread.py -h
+	usage: fdxread.py [-h] [--output format] [-v] [--seek n] [--pace n] inputfile
+
+	fdxread - Nexus FDX parser (incl. Garmin GND10)
+
+	positional arguments:
+	  inputfile        Serial port or file to read from. Examples: /dev/ttyACM0,
+			   COM3, ./file.dump
+
+	optional arguments:
+	  -h, --help       show this help message and exit
+	  --output format  Output mode, default NMEA0183. Possible: json, signalk,
+			   nmea0183, raw
+	  -v, --verbose    Verbose output
+	  --seek n         Seek this many bytes into file before starting (for files)
+	  --pace n         Pace reading to n messages per second (for files)
+
+	fdxread is used read FDX protocol data from Garmin GND10 units.
+
+
+::
+	(inside a populated virtualenv, as described above)
+	./fdxread /dev/ttyACM0
+
+This will read FDX from ttyACM0, and output NMEA0183 to stdout.
+
+
+Running it (old version)
+------------------------
 
 Right now the different tools in here should be chained together with unix
 pipes. To make it more user friendly down the road this may change, but for the
