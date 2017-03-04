@@ -565,7 +565,8 @@ class HEXdecoder(object):
                     yield fdxmsg
 
                     # Pace the output.
-                    sleep(1.0/self.frequency)
+                    if self.frequency is not None:
+                        sleep(1.0/self.frequency)
 
         #print >>stderr, "File replay completed. n_msg: %s n_errors: %s" % (self.n_msg, self.n_errors)
 
