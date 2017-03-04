@@ -24,6 +24,7 @@ By feeding this into OpenCPN (via kplex in tcp mode), we
 get some visualization.
 """
 import json
+import logging
 from operator import xor
 from datetime import datetime
 from sys import stdin, stdout, stderr
@@ -35,7 +36,6 @@ from LatLon import LatLon, Latitude, Longitude
 def checksum(sentence):
     cksum = reduce(xor, (ord(s) for s in sentence[1:-1]))
     return "%s%02X" % (sentence, cksum)
-
 
 def nmeapos(pos):
     """
@@ -56,66 +56,51 @@ def nmeapos(pos):
             fmt(pos.lon), pos.to_string("H")[1]]
 
 
-def main():
+class format_NMEA0183(object):
     gpstime = None
     gpspos = None
-    while True:
-        line = stdin.readline()
-        if len(line) == 0:
-            break
-        line = line.strip()
-        if len(line) <= 2:
-            continue
-        if line.startswith("#"):
-            continue
 
-        # oh yeah!
-        try:
-            sample = json.loads(line)
-        except ValueError:
-            print >>stderr, "Invalid JSON: %s" % line
-            continue
-
+    def handle(self, sample):
         assert type(sample) == dict
+        result = []
 
         if sample["mdesc"] == "dst200depth":
             # $--DBT,x.x,f,x.x,M,x.x,F*hh<CR><LF>
-            res = [("$SDDBT", "", "f", "%s" % sample["depth"], "m", "", "F")]
+            result += [("$SDDBT", "", "f", "%s" % sample["depth"], "m", "", "F")]
             # $--VHW,x.x,T,x.x,M,x.x,N,x.x,K*hh<CR><LF>
 
-            res += [("$SDVHW", "0.0", "T", "0.0", "M",
+            result += [("$SDVHW", "0.0", "T", "0.0", "M",
                      "%.2f" % sample["stw"], "N", "0.0", "K")]
 
         elif sample["mdesc"] == "gpstime":
             # Will be used later on.
-            gpstime = datetime.strptime(sample["utctime"], "%Y-%m-%dT%H:%M:%S")
-            continue
+            self.gpstime = datetime.strptime(sample["utctime"], "%Y-%m-%dT%H:%M:%S")
 
         elif sample["mdesc"] == "gpspos":
             lat = Latitude(sample["pos"][0])
             lon = Longitude(sample["pos"][1])
-            gpspos = LatLon(lat, lon)
-            continue
+            self.gpspos = LatLon(lat, lon)
 
         elif sample["mdesc"] == "gpscog":
-            if gpstime is None or gpspos is None:
-                continue
+            if self.gpstime is None or self.gpspos is None:
+                # Not enough data yet.
+                pass
+            else:
+                rmctuple = ("$GPRMC", self.gpstime.strftime("%H%M%S"), "A") + \
+                        tuple(nmeapos(self.gpspos)) + \
+                        ("%.2f" % sample["sog"],
+                        "%.2f" % sample["cog"],
+                        self.gpstime.strftime("%d%m%y"),
+                        "0.0",  # magn var
+                        "E")
+                result.append(rmctuple)
 
-            rmctuple = ("$GPRMC", gpstime.strftime("%H%M%S"), "A") + \
-                    tuple(nmeapos(gpspos)) + \
-                    ("%.2f" % sample["sog"],
-                    "%.2f" % sample["cog"],
-                    gpstime.strftime("%d%m%y"),
-                    "0.0",  # magn var
-                    "E")
-            res += [rmctuple]
-
-            #  $--HDT,x.x,T*hh<CR><LF>
-            res += [("$GPHDT", "%.2f" % (sample["cog"]), "T")]
+                #  $--HDT,x.x,T*hh<CR><LF>
+                result.append(("$GPHDT", "%.2f" % (sample["cog"]), "T"))
 
         elif sample["mdesc"] == "gnd10msg3":
             #  $--MWV,x.x,a,x.x,a*hh<CR><LF>
-            res = [("$FVMWV",
+            result += [("$FVMWV",
                     "%.2f" % sample["awa"],
                     "R",  # (R)elative, not (T)rue.
                     "%.2f" % sample["aws_lo"],
@@ -126,25 +111,50 @@ def main():
         elif sample["mdesc"] == "environment":
             # $IIXDR,P,1.02481,B,Barometer*0D
             # $IIXDR,C,19.52,C,TempAir*3D
-            res = [("$ZZXDR",
-                    "P", "%.5f" % sample["airpressure"],
+            result += [("$ZZXDR",
+                    "P", "%.5f" % sample["airpresultsure"],
                     "B", "Barometer"),
                    ("$ZZXDR",
                     "C", "%.5f" % sample["temp_c"],
                     "C", "TempDir")]
-            continue
 
         else:
-            if sample["mdesc"] in ["emptymsg0", "gpsping", "static1s",
-                                   "windsignal", "dst200depth2",
-                                   "gnd10msg2", "windmsg3", "wind40s"]:
+            if sample["mdesc"] not in ["emptymsg0", "gpsping", "static1s",
+                                       "windsignal", "dst200depth2",
+                                       "gnd10msg2", "windmsg3", "wind40s"]:
+                logging.warning("Unhandled: '%s'" % pformat(sample))
+            else:
                 # Ignore known no-ops.
                 pass
-            else:
-                print >>stderr, "Unhandled: '%s'" % pformat(sample)
+
+        return result or None
+
+def main():
+    logging.basicConfig(level=logging.INFO)
+
+    formatter = format_NMEA0183()
+
+    while True:
+        line = stdin.readline()
+        if len(line) == 0:
+            break
+        line = line.strip()
+        if len(line) <= 2:
+            continue
+        if line.startswith("#"):
             continue
 
-        if type(res) == tuple:
+        try:
+            sample = json.loads(line)
+        except ValueError:
+            logging.error("Invalid JSON: %s" % line)
+            continue
+
+        res = formatter.handle(sample)
+        if res is None:
+            continue
+
+        elif isinstance(res, tuple):
             res = [res]
 
         for tup in res:
