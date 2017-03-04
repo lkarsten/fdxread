@@ -38,8 +38,6 @@ from time import time, sleep
 
 import serial
 
-# from LatLon23 import LatLon, Latitude, Longitude
-
 from fdxdecode import FDXDecode, DataError, FailedAssumptionError
 from olddumpformat import dumpreader
 from nxbdump import nxbdump
@@ -189,7 +187,6 @@ class HEXinterface(object):
         #print >>stderr, "File replay completed. n_msg: %s n_errors: %s" % (self.n_msg, self.n_errors)
 
 
-
 # Original from https://stackoverflow.com/questions/11875770/
 def json_serial(obj):
     """JSON serializer for objects not serializable by default json code"""
@@ -215,7 +212,6 @@ if __name__ == "__main__":
     parser.add_argument("--seek", help="Seek this many bytes into file before starting (for files)", metavar="n", default=0, type=int)
     parser.add_argument("--pace", help="Pace reading to n messages per second (for files)", metavar="n", default=20.0, type=float)
 
-    parser.add_argument("--runtests", help="(development) Run test suite", action="store_true")
     if len(argv) == 1:
         parser.print_help()
         exit()
@@ -244,16 +240,14 @@ if __name__ == "__main__":
         parser.print_help()
         exit()
 
-    if args.runtests:
-        doctest.testmod()
-        unittest.main()
-        exit()
+    if int(args.pace) == 0:
+        args.pace = None
 
     if isfile(args.input):
         if args.input.startswith("/dev"):
             reader = GND10interface(args.input)
         else:
-            reader = HEXinterface(args.input)
+            reader = HEXinterface(args.input, seek=args.seek, frequency=args.pace)
     else:
         print("ERROR: Don't know how to read or open %s" % args.input)
         exit(1)
