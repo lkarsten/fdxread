@@ -130,10 +130,12 @@ class format_NMEA0183(object):
             # $IIXDR,P,1.02481,B,Barometer*0D
             # $IIXDR,C,19.52,C,TempAir*3D
             result += [("$ZZXDR",
-                        "P", "%.5f" % sample["airpressure"],
+                        "P",
+                        "%.5f" % sample["airpressure"],
                         "B", "Barometer"),
                        ("$ZZXDR",
-                        "C", "%.5f" % sample["temp_c"],
+                        "C",
+                        "%.2f" % sample["temp_c"],
                         "C",
                         "TempDir")
                        ]
