@@ -63,15 +63,29 @@ class format_NMEA0183(object):
 
         if sample["mdesc"] == "dst200depth":
             # $--DBT,x.x,f,x.x,M,x.x,F*hh<CR><LF>
-            result += [("$SDDBT", "", "f", "%s" % sample["depth"], "m", "", "F")]
+            result += [("$SDDBT",
+                        "",
+                        "f",
+                        "%s" % sample["depth"],
+                        "m",
+                        "",
+                        "F")]
             # $--VHW,x.x,T,x.x,M,x.x,N,x.x,K*hh<CR><LF>
 
-            result += [("$SDVHW", "0.0", "T", "0.0", "M",
-                     "%.2f" % sample["stw"], "N", "0.0", "K")]
+            result += [("$SDVHW",
+                        "0.0",
+                        "T",
+                        "0.0",
+                        "M",
+                        "%.2f" % sample["stw"],
+                        "N",
+                        "0.0",
+                        "K")]
 
         elif sample["mdesc"] == "gpstime":
             # Will be used later on.
-            self.gpstime = datetime.strptime(sample["utctime"], "%Y-%m-%dT%H:%M:%S")
+            self.gpstime = datetime.strptime(sample["utctime"],
+                                             "%Y-%m-%dT%H:%M:%S")
 
         elif sample["mdesc"] == "gpspos":
             lat = Latitude(sample["pos"][0])
@@ -83,37 +97,43 @@ class format_NMEA0183(object):
                 # Not enough data yet.
                 pass
             else:
-                rmctuple = ("$GPRMC", self.gpstime.strftime("%H%M%S"), "A") + \
-                        tuple(nmeapos(self.gpspos)) + \
-                        ("%.2f" % sample["sog"],
+                rmc = ["$GPRMC",
+                       self.gpstime.strftime("%H%M%S"),
+                       "A"]
+                rmc += nmeapos(self.gpspos)
+                rmc += ["%.2f" % sample["sog"],
                         "%.2f" % sample["cog"],
                         self.gpstime.strftime("%d%m%y"),
                         "0.0",  # magn var
-                        "E")
-                result.append(rmctuple)
+                        "E"]
+                result.append(tuple(rmc))
 
                 #  $--HDT,x.x,T*hh<CR><LF>
-                result.append(("$GPHDT", "%.2f" % (sample["cog"]), "T"))
+                result.append(("$GPHDT",
+                               "%.2f" % sample["cog"],
+                               "T"))
 
         elif sample["mdesc"] == "gnd10msg3":
             #  $--MWV,x.x,a,x.x,a*hh<CR><LF>
             result += [("$FVMWV",
-                    "%.2f" % sample["awa"],
-                    "R",  # (R)elative, not (T)rue.
-                    "%.2f" % sample["aws_lo"],
-                    "K",    # knots
-                    "A",   # (valid)
-                    )]
+                        "%.2f" % sample["awa"],
+                        "R",  # (R)elative, not (T)rue.
+                        "%.2f" % sample["aws_lo"],
+                        "K",    # knots
+                        "A")   # (valid)
+                       ]
 
         elif sample["mdesc"] == "environment":
             # $IIXDR,P,1.02481,B,Barometer*0D
             # $IIXDR,C,19.52,C,TempAir*3D
             result += [("$ZZXDR",
-                    "P", "%.5f" % sample["airpresultsure"],
-                    "B", "Barometer"),
-                   ("$ZZXDR",
-                    "C", "%.5f" % sample["temp_c"],
-                    "C", "TempDir")]
+                        "P", "%.5f" % sample["airpressure"],
+                        "B", "Barometer"),
+                       ("$ZZXDR",
+                        "C", "%.5f" % sample["temp_c"],
+                        "C",
+                        "TempDir")
+                       ]
 
         else:
             if sample["mdesc"] not in ["emptymsg0", "gpsping", "static1s",
