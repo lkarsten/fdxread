@@ -302,17 +302,14 @@ def FDXDecode(pdu):
         keys = intdecoder(body[48:], width=8)
         if strbody == "00000000000010001081":
             keys += [("elevation", float("NaN")),
-                     ("pos", (float("NaN"), float("NaN"))),
-                     ("navigation.position.latitude", float("NaN")),
-                     ("navigation.position.longitude", float("NaN")),
+                     ("lat", float("NaN")),
+                     ("lon", float("NaN")),
                     ]
         else:
             lat = Latitude(degree=body[0:8].uintle, minute=body[8:24].uintle * 0.001)
             lon = Longitude(degree=body[24:32].uintle, minute=body[32:48].uintle * 0.001)
             keys += [("elevation", body[64:72].uintle)]  # in feet
-            keys += [("pos", (lat, lon),)]
-            keys += [("navigation.position.latitude", lat)]
-            keys += [("navigation.position.longitude", lon)]
+            keys += [("lat", lat), ("lon", lon)]
             #keys += [("gmapspos", "https://www.google.com/maps?ie=UTF8&hq&q=%s,%s+(Point)&z=11" % (lat, lon))]
 
         # The gnd10-faked gps position message is 0x00000000000010001081, which
@@ -643,22 +640,21 @@ class FDXDecodeTest(unittest.TestCase):
     def test_gps_position(self):
         r = FDXDecode("20 08 28 00 00 00 00 00 00 10 00 10 81")  # No lock
         self.assertEqual(r["mdesc"], "gpspos")
-        assert isnan(r["navigation.position.latitude"])
-        assert isnan(r["navigation.position.longitude"])
+        assert isnan(r["lat"])
+        assert isnan(r["lon"])
 
         r = FDXDecode("20 08 28 3b 21 c3 0a ff 8e e0 00 42 81")  # Some position
         self.assertEqual(r["mdesc"], "gpspos")
-        position = r["pos"]
-        assert isinstance(position[0], Latitude)
-        assert isinstance(position[1], Longitude)
-        self.assertAlmostEqual(float(position[0].to_string("D")), 59.83255)
-        self.assertAlmostEqual(float(position[1].to_string("D")), 10.6101166667)
+        assert isinstance(r["lat"], Latitude)
+        assert isinstance(r["lon"], Longitude)
+        self.assertAlmostEqual(float(r["lat"].to_string("D")), 59.83255)
+        self.assertAlmostEqual(float(r["lon"].to_string("D")), 10.6101166667)
 
     def test_gps_cogsog(self):
         r = FDXDecode("21 04 25 ff ff 00 00 00 81")  # No lock
         self.assertEqual(r["mdesc"], "gpscog")
-        assert isnan(r["navigation.courseOverGroundTrue"])
-        assert isnan(r["navigation.speedOverGroundTrue"])
+        assert isnan(r["cog"])
+        assert isnan(r["sog"])
 
         r = FDXDecode("21 04 25 0c 01 66 7e 15 81 ")  # Steaming ahead
         self.assertEqual(int(r["cog"]), 177)

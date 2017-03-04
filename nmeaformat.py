@@ -91,8 +91,8 @@ class format_NMEA0183(object):
                                              "%Y-%m-%dT%H:%M:%S")
 
         elif sample["mdesc"] == "gpspos":
-            lat = Latitude(sample["pos"][0])
-            lon = Longitude(sample["pos"][1])
+            lat = Latitude(sample["lat"])
+            lon = Longitude(sample["lon"])
             self.gpspos = LatLon(lat, lon)
 
         elif sample["mdesc"] == "gpscog":
