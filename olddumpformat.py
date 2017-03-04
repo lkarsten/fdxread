@@ -34,7 +34,6 @@ def dumpreader(inputfile, trim=False, seek=0):
 
     for line in fp.readlines():
         if line.startswith("#"):
-            print line,
             continue
 
         if 0:
