@@ -34,7 +34,7 @@ from pprint import pprint
 from sys import argv, stdin, stdout, stderr
 from time import sleep, time
 
-from LatLon import LatLon, Latitude, Longitude
+from LatLon23 import LatLon, Latitude, Longitude
 from bitstring import BitArray
 
 from olddumpformat import dumpreader
@@ -648,11 +648,11 @@ class FDXDecodeTest(unittest.TestCase):
 
         r = FDXDecode("20 08 28 3b 21 c3 0a ff 8e e0 00 42 81")  # Some position
         self.assertEqual(r["mdesc"], "gpspos")
-        self.assertEqual(r["navigation.position.latitude"], Latitude(59.83255))
-        # Comparing floats ....
-        # AssertionError: Longitude 10.6101166667 != Longitude 10.6101166667
-        self.assertEqual(str(r["navigation.position.longitude"]),
-                         str(Longitude(10.6101166667)))
+        position = r["pos"]
+        assert isinstance(position[0], Latitude)
+        assert isinstance(position[1], Longitude)
+        self.assertAlmostEqual(float(position[0].to_string("D")), 59.83255)
+        self.assertAlmostEqual(float(position[1].to_string("D")), 10.6101166667)
 
     def test_gps_cogsog(self):
         r = FDXDecode("21 04 25 ff ff 00 00 00 81")  # No lock
