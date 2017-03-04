@@ -25,17 +25,14 @@ get some visualization.
 """
 import json
 import logging
+import unittest
 from operator import xor
 from datetime import datetime
-from sys import stdin, stdout, stderr
+from sys import argv, stdin, stdout, stderr
 from pprint import pprint, pformat
 
 from LatLon import LatLon, Latitude, Longitude
 
-
-def checksum(sentence):
-    cksum = reduce(xor, (ord(s) for s in sentence[1:-1]))
-    return "%s%02X" % (sentence, cksum)
 
 def nmeapos(pos):
     """
@@ -127,10 +124,42 @@ class format_NMEA0183(object):
                 # Ignore known no-ops.
                 pass
 
-        return result or None
+        result = [",".join(x) for x in result]  # Make it a string.
+        return self.checksum(result or None)
+
+    def checksum(self, samples):
+        if samples is None:
+            return None
+
+        completed = []
+        for sentence in samples:
+            assert sentence[0] == "$"
+            cksum = reduce(xor, (ord(s) for s in sentence[1:]))
+            completed.append("%s*%02X" % (sentence, cksum))
+        return completed
+
+
+class TestNMEA0183(unittest.TestCase):
+    def test_gps(self):
+        formatter = format_NMEA0183()
+        r = formatter.handle({"mdesc": "gpspos", "pos": [54.1024666667, 10.8079]})
+        assert r is None
+        r = formatter.handle({"utctime": "2017-01-12T19:16:55", "mdesc": "gpstime"})
+        assert r is None
+
+        r = formatter.handle({"mdesc": "gpscog", "sog": 0.16, "cog": 344.47058823529414})
+        assert len(r) == 2
+
+        assert r[0] == '$GPRMC,191655,A,5406.15,N,1048.47,E,0.16,344.47,120117,0.0,E*47'
+        assert r[1] == '$GPHDT,344.47,T*05'
+
 
 def main():
     logging.basicConfig(level=logging.INFO)
+    if "--test" in argv:
+        argv.pop(argv.index("--test"))
+        unittest.main()
+        exit()
 
     formatter = format_NMEA0183()
 
@@ -150,18 +179,12 @@ def main():
             logging.error("Invalid JSON: %s" % line)
             continue
 
-        res = formatter.handle(sample)
-        if res is None:
-            continue
+        nmealines = formatter.handle(sample)
+        if nmealines:
+            for line in nmealines:
+                print line
+                stdout.flush()
 
-        elif isinstance(res, tuple):
-            res = [res]
-
-        for tup in res:
-            tup = tup + ("*",)
-            nmealine = ",".join(tup)
-            print checksum(nmealine)
-            stdout.flush()
 
 if __name__ == "__main__":
     main()
