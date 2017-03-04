@@ -60,6 +60,9 @@ class format_NMEA0183(object):
     gpstime = None
     gpspos = None
 
+    def __init__(self, joinlines=True):
+        self.joinlines = joinlines
+
     def handle(self, sample):
         assert type(sample) == dict
         result = []
@@ -161,13 +164,17 @@ class format_NMEA0183(object):
             assert sentence[0] == "$"
             cksum = reduce(xor, (ord(s) for s in sentence[1:]))
             completed.append("%s*%02X" % (sentence, cksum))
-        return completed
+
+        if completed and self.joinlines:
+            completed = "\n".join(completed)
+
+        return completed or None
 
 
 class TestNMEA0183(unittest.TestCase):
     def test_gps(self):
-        formatter = format_NMEA0183()
-        r = formatter.handle({"mdesc": "gpspos", "pos": [54.1024666667, 10.8079]})
+        formatter = format_NMEA0183(joinlines=False)
+        r = formatter.handle({"mdesc": "gpspos", "lat": 54.10246, "lon": 10.8079})
         assert r is None
         r = formatter.handle({"utctime": "2017-01-12T19:16:55", "mdesc": "gpstime"})
         assert r is None
@@ -178,6 +185,12 @@ class TestNMEA0183(unittest.TestCase):
         assert r[0] == '$GPRMC,191655,A,5406.15,N,1048.47,E,0.16,344.47,120117,0.0,E*47'
         assert r[1] == '$GPHDT,344.47,T*05'
 
+    def test_joining(self):
+        formatter = format_NMEA0183(joinlines=True)
+        msg = {"mdesc": "environment", "airpressure": 101.42, "temp_c": 21.0}
+        r = formatter.handle(msg)
+        assert isinstance(r, str)
+        assert r == "$ZZXDR,P,101.42000,B,Barometer*21\n$ZZXDR,C,21.00,C,TempDir*10"
 
 def main():
     logging.basicConfig(level=logging.INFO)
@@ -186,7 +199,7 @@ def main():
         unittest.main()
         exit()
 
-    formatter = format_NMEA0183()
+    formatter = format_NMEA0183(joinlines=False)
 
     while True:
         line = stdin.readline()

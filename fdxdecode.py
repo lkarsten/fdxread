@@ -38,6 +38,7 @@ from LatLon23 import LatLon, Latitude, Longitude
 from bitstring import BitArray
 
 from olddumpformat import dumpreader
+from nxbdump import nxbdump
 
 class DataError(Exception):
     pass
@@ -49,19 +50,6 @@ def fahr2celcius(temp):
     assert type(temp) in [float, int]
     assert temp < 150
     return (temp - 32) * (5/9.)
-
-def fahr2kelvin(temp):
-    assert type(temp) in [float, int]
-    assert temp < 150
-    return (temp + 459.67) * (5/9.)
-
-def knots2m(knots):
-    """knots => m/s
-
-    >>> knots2m(10)
-    5.144444444444445
-    """
-    return knots * (1852.0/3600)
 
 def checklength(pdu, speclen):
     "pdu is hex encoded, 4 bits per char."
@@ -269,7 +257,8 @@ def FDXDecode(pdu):
         if null != '00':
             keys += [("fault", "null is 0x%s, expected 0x00" % null)]
         temp = body[32:40].uintle  # zz
-        keys += [('temp_f?', "%.2f" % temp)]
+        # These are not right. It is never 41 degrees celcius in Norway ;-)
+        keys += [('temp_f', temp)]
         keys += [('temp_c', fahr2celcius(temp))]
 
     elif mtype == 0x1c031f:
@@ -515,7 +504,11 @@ class HEXdecoder(object):
             pass  # Catch permission problems early.
 
     def recvmsg(self):
-        reader = dumpreader(self.inputfile, trim=True, seek=self.seek)
+        if self.inputfile.endswith(".nxb"):
+            reader = nxbdump(self.inputfile)
+        else:
+            reader = dumpreader(self.inputfile, trim=True, seek=self.seek)
+
         for ts, mlen, frame in reader:
             assert len(frame) > 0
             #print "trying to decode %i bytes: %s" % (len(frame), frame)
@@ -585,18 +578,6 @@ def StreamDecoder():
             return
 
 
-# Original from https://stackoverflow.com/questions/11875770/
-def json_serial(obj):
-    """JSON serializer for objects not serializable by default json code"""
-    if isinstance(obj, datetime):
-        return obj.isoformat()
-    elif isinstance(obj, Latitude):
-        return float(obj.to_string("D"))
-    elif isinstance(obj, Longitude):
-        return float(obj.to_string("D"))
-    raise TypeError("Type %s not serializable" % type(obj))
-
-
 class FDXDecodeTest(unittest.TestCase):
     def test_simple(self):
         with self.assertRaises(DataError):
@@ -646,7 +627,6 @@ if __name__ == "__main__":
     elif len(argv) > 1 and argv[1] == "--classtest":
         port = GND10decoder("/dev/tty.usbmodem1411")
         for buf in port.recvmsg():
-            buf = skfilter(buf)
             if buf is None:
                 logging.debug("empty decoded frame")
                 continue
