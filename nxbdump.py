@@ -25,6 +25,7 @@ References:
 
 Author: Lasse Karstensen <lasse.karstensen@gmail.com>, August 2016
 """
+from __future__ import print_function
 
 from pprint import pprint
 from sys import argv
@@ -58,11 +59,11 @@ def nxbdump(inputfile):
 
 if __name__ == "__main__":
     if len(argv) < 2 or not exists(argv[-1]):
-        print "Usage: %s savefile.nxb" % argv[0]
+        print("Usage: %s savefile.nxb" % argv[0])
         exit(1)
 
     for record in nxbdump(argv[1]):
         try:
-            print "%s\t%s\t%s" % (record)
+            print("%s\t%s\t%s" % (record))
         except IOError:
             exit()

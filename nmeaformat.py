@@ -23,15 +23,18 @@ it.
 By feeding this into OpenCPN (via kplex in tcp mode), we
 get some visualization.
 """
+from __future__ import print_function
+
 import json
 import logging
 import unittest
-from operator import xor
 from datetime import datetime
-from sys import argv, stdin, stdout, stderr
+from functools import reduce
+from operator import xor
 from pprint import pprint, pformat
+from sys import argv, stdin, stdout, stderr
 
-from LatLon import LatLon, Latitude, Longitude
+from LatLon23 import LatLon, Latitude, Longitude
 
 
 def nmeapos(pos):
@@ -202,7 +205,7 @@ def main():
         nmealines = formatter.handle(sample)
         if nmealines:
             for line in nmealines:
-                print line
+                print(line)
                 stdout.flush()
 
 

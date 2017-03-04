@@ -8,6 +8,7 @@ comfortably in your office chair!
 
 Author: Lasse Karstensen <lasse.karstensen@gmail.com>, July 2013.
 """
+from __future__ import print_function
 import socket
 import sys
 from datetime import datetime
@@ -16,10 +17,10 @@ from time import sleep, time
 from os.path import realpath, dirname
 
 def log(msg):
-    print datetime.now(), msg
+    print(datetime.now(), msg)
 
 def usage():
-    print "Usage: %s <nmeafile[.gz]>" % sys.argv[0]
+    print("Usage: %s <nmeafile[.gz]>" % sys.argv[0])
 
 def open_input():
     "Open the input file and return a pointer to it"
@@ -56,7 +57,7 @@ def main():
             if not inputfile:
                 inputfile = open_input()
                 if skipbytes:
-                    print "Forwarding %i bytes" % skipbytes
+                    print("Forwarding %i bytes" % skipbytes)
                     inputfile.seek(skipbytes)
                     inputfile.readline()
 
@@ -111,7 +112,7 @@ def main():
             # don't fall behind.
             sleep((1/Hz) / 10)
     except KeyboardInterrupt:
-        print
+        print()
         log("Normal exit")
         sys.exit()
 

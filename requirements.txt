@@ -1,7 +1,7 @@
 
 # bitstring
 # pytest
-LatLon
+LatLon23
 
 # fdxdecode.py, dumpserial.py
 pyserial==3.0.1

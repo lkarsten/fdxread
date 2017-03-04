@@ -21,6 +21,8 @@ Garmin GND10 protocol decoder.
 
 Decode the bitstream seen from the Garmin GND10 USB port.
 """
+from __future__ import print_function
+
 import json
 import logging
 import unittest
@@ -126,7 +128,7 @@ def FDXDecode(pdu):
 
     if 0:
         body = BitArray(hex=pdu[6:])
-        print hex(mtype), body
+        print(hex(mtype), body)
 
     if mtype == 0x000202:
         mdesc = "emptymsg0"
@@ -519,7 +521,7 @@ def skfilter(msg):
         return
 
     assert isinstance(msg, dict)
-    for k in msg.keys():
+    for k in list(msg.keys()):
         # Shortened to avoid "vessels.self" on all keys. Fix when neccessary.
         if k.startswith("environment") or k.startswith("navigation"):
             continue
@@ -588,17 +590,17 @@ def StreamDecoder():
         #print "'%s'" % line, l
         ts, mlen, pdu = (float(l[0]), int(l[1]), l[2])
         if not pdu[-2:] == '81':
-            print >>stderr, "# Skipping invalid input line: %s" % line
+            print("# Skipping invalid input line: %s" % line, file=stderr)
             continue
 
         try:
             res = FDXDecode(pdu)
         except DataError as e:
-            print >>stderr, "# DataError: %s %s %s" % (pdu[:3], pdu[3:], str(e))
+            print("# DataError: %s %s %s" % (pdu[:3], pdu[3:], str(e)), file=stderr)
         except NotImplementedError as e:
-            print >>stderr, "# INCOMPLETE: %s" % (str(e))
+            print("# INCOMPLETE: %s" % (str(e)), file=stderr)
         except FailedAssumptionError as e:
-            print >>stderr, "# FAULT: %s assumption: %s" % (pdu, str(e))
+            print("# FAULT: %s assumption: %s" % (pdu, str(e)), file=stderr)
         else:
             if res is not None:
 #                print "%.3f %s" % (ts, res)
@@ -606,9 +608,9 @@ def StreamDecoder():
                     if ts > 2:
                         ts = datetime.fromtimestamp(ts)
                         #res["ts"] = ts.isoformat()
-                        print json.dumps(res, default=json_serial)
+                        print(json.dumps(res, default=json_serial))
                     else:
-                        print res
+                        print(res)
                 except IOError:
                     return
 
@@ -685,8 +687,8 @@ if __name__ == "__main__":
                 logging.debug("empty decoded frame")
                 continue
             assert type(buf) == dict
-            print buf
-        print "EXIT: Port closed or empty"
+            print(buf)
+        print("EXIT: Port closed or empty")
 
     else:
         StreamDecoder()

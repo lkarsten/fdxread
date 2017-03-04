@@ -23,7 +23,7 @@ Expand to multiple lines if a single read returned multiple frames.
 
 Author: Lasse Karstensen <lasse.karstensen@gmail.com>, August 2016
 """
-
+from __future__ import print_function
 from pprint import pprint
 from sys import argv, stderr
 from os.path import exists
@@ -35,9 +35,6 @@ def dumpreader(inputfile, trim=False, seek=0):
     for line in fp.readlines():
         if line.startswith("#"):
             continue
-
-        if 0:
-            print '\n"%s"' % line
 
         ts, mlen, pdu = line.split(None, 2)
 
@@ -63,11 +60,11 @@ def dumpreader(inputfile, trim=False, seek=0):
 
 if __name__ == "__main__":
     if len(argv) < 2 or not exists(argv[-1]):
-        print >>stderr, "Usage: %s dumpfile" % argv[0]
+        print("Usage: %s dumpfile" % argv[0], file=stderr)
         exit(1)
 
     for record in dumpreader(argv[1]):
         try:
-            print "%s\t%s\t%s" % (record)
+            print("%s\t%s\t%s" % (record))
         except IOError:
             exit()

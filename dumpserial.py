@@ -33,6 +33,7 @@ I've attempted to change bitrate, stop and parity bits, but it doesn't seem to
 make any difference for such a ACM device. (or I don't understand stty, which
 is quite possible. Hello 1985!)
 """
+from __future__ import print_function
 from datetime import datetime
 from os.path import exists
 from sys import stderr, argv, stdout
@@ -84,14 +85,14 @@ if __name__ == "__main__":
     elif exists("/dev/tty.usbmodem1411"):  # On my laptop
         serialdevice = "/dev/tty.usbmodem1411"
     else:
-        print "ERROR: Unable to find a suitable serial device."
-        print "Usage: %s [serialdevice]" % argv[0]
+        print("ERROR: Unable to find a suitable serial device.")
+        print("Usage: %s [serialdevice]" % argv[0])
         exit(1)
 
-    print >>stderr, "Using serial device %s" % serialdevice
+    print("Using serial device %s" % serialdevice, file=stderr)
     with serial.Serial(port=serialdevice) as ser:
-        print "# source: %s" % serialdevice
-        print "# starttime: %s" % datetime.now()
+        print("# source: %s" % serialdevice)
+        print("# starttime: %s" % datetime.now())
         for record in readport(ser):
-            print "%.03f\t%i\t%s" % record
+            print("%.03f\t%i\t%s" % record)
             stdout.flush()
