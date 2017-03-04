@@ -234,6 +234,9 @@ if __name__ == "__main__":
     elif args.output == "json":
         from formats import format_json
         fmter = format_json(devmode=False)
+    elif args.output == "raw":
+        from formats import format_json
+        fmter = format_json(devmode=True)
     elif args.output == "signalk":
         from formats import format_signalk_delta
         fmter = format_signalk_delta()
