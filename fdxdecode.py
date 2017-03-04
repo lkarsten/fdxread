@@ -607,7 +607,7 @@ def StreamDecoder():
                     if ts > 2:
                         ts = datetime.fromtimestamp(ts)
                         #res["ts"] = ts.isoformat()
-                        print json.dumps(res)
+                        print json.dumps(res, default=json_serial)
                     else:
                         print res
                 except IOError:
@@ -617,6 +617,19 @@ def StreamDecoder():
             stdout.flush()
         except IOError:
             return
+
+
+# Original from https://stackoverflow.com/questions/11875770/
+def json_serial(obj):
+    """JSON serializer for objects not serializable by default json code"""
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    elif isinstance(obj, Latitude):
+        return float(obj.to_string("D"))
+    elif isinstance(obj, Longitude):
+        return float(obj.to_string("D"))
+    raise TypeError("Type %s not serializable" % type(obj))
+
 
 class FDXDecodeTest(unittest.TestCase):
     def test_simple(self):
