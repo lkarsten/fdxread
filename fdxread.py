@@ -43,6 +43,7 @@ import serial
 from fdxdecode import FDXDecode, DataError, FailedAssumptionError
 from olddumpformat import dumpreader
 
+
 class GND10decoder(object):
     stream = None
     n_msg = 0
