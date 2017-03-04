@@ -95,13 +95,15 @@ class format_json(object):
     def filter(self, s):
         assert isinstance(s, dict)
         for key in ["mdesc", "ints", "strbody", "null", "xx", "yy", "u1", "u2",
-                    "fix1"]:
+                    "fix1", "what?"]:
             if key in s:
                 del s[key]
         for key in sorted(s.keys()):
             if key.startswith("maybe"):
                 del s[key]
-            if key.startswith("unknown"):
+            elif key.startswith("not_"):
+                del s[key]
+            elif key.startswith("unknown"):
                 del s[key]
 
         return s or None
@@ -110,6 +112,9 @@ class format_json(object):
         assert type(s) == dict
         if not self.devmode:
             s = self.filter(s)
+
+        if s is None:
+            return None
         return json.dumps(s, default=json_serial)
 
 

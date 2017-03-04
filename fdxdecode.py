@@ -147,16 +147,16 @@ def FDXDecode(pdu):
             return
         body = checklength(pdu, 8)
 
+        # This is not depth, it jumps around too much.
         depth = body[0:16].uintle
         if depth == 2**16-1:
             depth = float("NaN")
-        keys = [('depth', "%.2f" % (depth * 0.01))]
+        keys = [('not_depth', depth * 0.01)]
 
         #stw = body[16:32].uintle
         #if stw == 2**16-1:
         #    stw = float("NaN")
         #keys = [('stw?', "%.2f" % (stw * 0.001))]
-
         keys += intdecoder(body[16:], width=16)
 
     elif mtype == 0x030102:
@@ -188,7 +188,7 @@ def FDXDecode(pdu):
         body = checklength(pdu, 6)
         xx = body[0:8].uintle
         yy = body[8:16].uintle
-        keys = [('value', xx)]
+        keys = [('xx', xx)]
         if xx != yy:
             keys += [('fault', "xx != yy (got %s, expected %s)" % (xx, yy))]
 
@@ -200,7 +200,7 @@ def FDXDecode(pdu):
         yy = body[8:16].uintle
         if xx != yy:
             raise FailedAssumptionError(mdesc, "xx != yy (got %s, expected %s)" % (xx, yy))
-        keys = [('value', xx)]
+        keys = [('xx', xx)]
 
     elif mtype == 0x110213:
         mdesc = "windstale"

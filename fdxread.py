@@ -149,7 +149,7 @@ class HEXinterface(object):
     Used for running with test data when the GND10 is not
     connected.
 
-    Interface should be close to GND10decoder().
+    Interface should be close to GND10interface().
     """
     last_yield = None
     n_msg = 0
