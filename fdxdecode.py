@@ -153,10 +153,6 @@ def FDXDecode(pdu):
         keys += [('aws_hi', windspeed)]
         keys += [('aws_lo', body[32:46].uintle * 0.01)]
 
-        keys += [('environment.wind.angleApparent', radians(awa))]
-        keys += [('environment.wind.speedApparent', knots2m(windspeed))]
-
-
     elif mtype == 0x020301:
         mdesc = "dst200depth2"
         if strbody in ['ffff000081', '0000000081']:
@@ -198,8 +194,6 @@ def FDXDecode(pdu):
         keys += [('depth', depth * 0.01)]
         keys += [('stw', body[16:24].uintle)]  # maybe
         keys += [('unknown2', body[24:32].uintle)] # quality?
-
-        keys += [('environment.depth.belowTransducer', depth * 0.01)]
 
     elif mtype == 0x080109:
         mdesc = "static1s"  # ex windmsg0, stalemsg0
@@ -267,7 +261,6 @@ def FDXDecode(pdu):
 
         pressure = body[0:16].uintle * 0.01
         keys += [('airpressure', pressure)]
-        keys += [('environment.outside.pressure', pressure)]
 
         yy = strbody[4:6]  # save us a bitwise lookup.
         if yy != 'ff':
@@ -278,7 +271,6 @@ def FDXDecode(pdu):
         temp = body[32:40].uintle  # zz
         keys += [('temp_f?', "%.2f" % temp)]
         keys += [('temp_c', fahr2celcius(temp))]
-        keys += [('environment.outside_temperature', fahr2kelvin(temp))]
 
     elif mtype == 0x1c031f:
         mdesc = "wind40s"
@@ -338,8 +330,6 @@ def FDXDecode(pdu):
 
         keys = [('cog', cog), ('sog', sog),
                 ('unknown', body[32:].uintle)]
-        keys += [('navigation.courseOverGroundTrue', radians(cog))]
-        keys += [('navigation.speedOverGroundTrue', knots2m(sog))]
 
     elif mtype == 0x230526:
         mdesc = "static2s"
@@ -366,9 +356,8 @@ def FDXDecode(pdu):
             assert year < 3000
             assert year > 2000
             ts = datetime(year=year, month=month, day=day, hour=hour, minute=minute, second=second)
-            keys = [("utctime", ts.isoformat())]
+            keys = [("utctime", ts.isoformat())]   # XXX: Cast to string later
             keys += [("what?", body[56:64].uintle)]
-            keys += [("navigation.datetime.value", ts.isoformat())]
 
         except (ValueError, AssertionError) as e:
             keys = [('ParseFault', str(e))]
@@ -506,24 +495,6 @@ class GND10decoder(object):
                         yield fdxmsg
 
                 buf = bytearray()
-
-def skfilter(msg):
-    """
-    Filter a dictionary to only include Signal K attributes.
-    """
-    if msg is None:
-        return
-
-    assert isinstance(msg, dict)
-    for k in list(msg.keys()):
-        # Shortened to avoid "vessels.self" on all keys. Fix when neccessary.
-        if k.startswith("environment") or k.startswith("navigation"):
-            continue
-        del msg[k]
-
-    if len(msg) == 0:
-        return None
-    return msg
 
 class HEXdecoder(object):
     """
