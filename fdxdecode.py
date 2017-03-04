@@ -555,7 +555,6 @@ class HEXdecoder(object):
             try:
                 fdxmsg = FDXDecode(frame)
             except (DataError, FailedAssumptionError, NotImplementedError) as e:
-                logging.warning("Ignoring exception: %s" % str(e))
                 self.n_errors += 1
             else:
                 if fdxmsg is not None:
