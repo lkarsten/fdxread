@@ -1,9 +1,22 @@
 import logging
 import unittest
+import py_compile
+
 from fdxdecode import HEXdecoder
 from olddumpformat import dumpreader
 
 from glob import glob
+
+class SyntaxTests(unittest.TestCase):
+    def test_compiles(self):
+        """
+        Check syntax on Python files.
+
+        Some of the scripts read from a port or stdin, making testing
+        them reasonably a bit harder.
+        """
+        py_compile.main(glob("*.py"))
+
 
 class IntegrationTests(unittest.TestCase):
     def xtest_dumpreader(self):
