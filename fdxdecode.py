@@ -411,10 +411,8 @@ def FDXDecode(pdu):
         raise NotImplementedError("handler for 0x%06x mlen=%s: %s" % (mtype, mlen, pdu))
 
     keys += [('strbody', strbody)]
-    keys = dict(keys)
-    keys["mtype"] = "%06x" % mtype
-    keys["mdesc"] = mdesc
-    return keys
+    keys += [('mdesc', mdesc)]
+    return dict(keys)
 
 class GND10decoder(object):
     stream = None
