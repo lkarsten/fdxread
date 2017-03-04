@@ -131,7 +131,6 @@ class TestFormatters(unittest.TestCase):
         r = formatter.handle(msg)
         assert isinstance(r, str)
         assert json.loads(r)
-        pprint(r)
 
 
 if __name__ == "__main__":
