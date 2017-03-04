@@ -42,6 +42,7 @@ import serial
 
 from fdxdecode import FDXDecode, DataError, FailedAssumptionError
 from olddumpformat import dumpreader
+from nxbdump import nxbdump
 
 
 class GND10decoder(object):
@@ -162,7 +163,11 @@ class HEXdecoder(object):
             pass  # Catch permission problems early.
 
     def recvmsg(self):
-        reader = dumpreader(self.inputfile, trim=True, seek=self.seek)
+        if self.inputfile.endswith(".nxb"):
+            reader = nxbdump(self.inputfile)
+        else:
+            reader = dumpreader(self.inputfile, trim=True, seek=self.seek)
+
         for ts, mlen, frame in reader:
             assert len(frame) > 0
             #print "trying to decode %i bytes: %s" % (len(frame), frame)
@@ -184,6 +189,7 @@ class HEXdecoder(object):
         #print >>stderr, "File replay completed. n_msg: %s n_errors: %s" % (self.n_msg, self.n_errors)
 
 
+
 # Original from https://stackoverflow.com/questions/11875770/
 def json_serial(obj):
     """JSON serializer for objects not serializable by default json code"""
@@ -201,16 +207,10 @@ if __name__ == "__main__":
         description="fdxread - Nexus FDX parser (incl. Garmin GND10)",
         epilog="fdxread is used read FDX protocol data from Garmin GND10 units.")
 
-#    group = parser.add_mutually_exclusive_group(required=True)
-#    group.add_argument("-inputfile", help="Read input from file. (hex/dump format)", metavar="file.dump")
-#    group.add_argument("--serialport", help="Read input from serial port. (/dev/ttyACM0, COM3, ..)", metavar="port")
-
     parser.add_argument("input", help="Serial port or file to read from.\nExamples: /dev/ttyACM0, COM3, ./file.dump", metavar="inputfile")
-    parser.add_argument("--output", help="Output mode, default NMEA0183. Possible: json, signalk, nmea0183", default="nmea0183", metavar="format")
+    parser.add_argument("--output", help="Output mode, default NMEA0183. Possible: json, signalk, nmea0183, raw", default="nmea0183", metavar="format")
 
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
-#    parser.add_argument("-c", default=20, type=int,
-#                        help="Number of concurrent checks. Default: 20", metavar="workers")
 
     parser.add_argument("--seek", help="Seek this many bytes into file before starting (for files)", metavar="n", default=0, type=int)
     parser.add_argument("--pace", help="Pace reading to n messages per second (for files)", metavar="n", default=20.0, type=float)
