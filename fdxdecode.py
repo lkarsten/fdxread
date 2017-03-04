@@ -324,25 +324,24 @@ def FDXDecode(pdu):
     elif mtype == 0x210425:
         mdesc = "gpscog"
         body = checklength(pdu, 9)
-        keys = intdecoder(body, width=8)
-        #keys = [('xx', body[0:8].uintle)]
-        #keys += [('XX', body[8:16].uintle)]
-        #keys += [('yy', body[16:24].uintle)]
-        sog = body[0:16].uintle
-        if sog in [0, 255]:
+        if strbody == "ffff00000081":  # No GPS lock
+            cog = float("NaN")
             sog = float("NaN")
+        else:
+            cog = body[24:32].uintle
+            sog = body[0:16].uintle
 
-        cog = body[24:32].uintle
-        if cog in [0, 255]:
+        # Something is off with COG, it is 255 too often. Not sure why.
+        # Better safe than sorry (== grounded on the rocks)
+        if cog == 255:
             cog = float("NaN")
 
         # Scale the values.
         cog *= 360/255.
         sog *= 0.01
 
-        keys += [('cog', cog)]
-        keys += [('sog', sog)]
-
+        keys = [('cog', cog), ('sog', sog),
+                ('unknown', body[32:].uintle)]
         keys += [('navigation.courseOverGroundTrue', radians(cog))]
         keys += [('navigation.speedOverGroundTrue', knots2m(sog))]
 
@@ -655,6 +654,16 @@ class FDXDecodeTest(unittest.TestCase):
         # AssertionError: Longitude 10.6101166667 != Longitude 10.6101166667
         self.assertEqual(str(r["navigation.position.longitude"]),
                          str(Longitude(10.6101166667)))
+
+    def test_gps_cogsog(self):
+        r = FDXDecode("21 04 25 ff ff 00 00 00 81")  # No lock
+        self.assertEqual(r["mdesc"], "gpscog")
+        assert isnan(r["navigation.courseOverGroundTrue"])
+        assert isnan(r["navigation.speedOverGroundTrue"])
+
+        r = FDXDecode("21 04 25 0c 01 66 7e 15 81 ")  # Steaming ahead
+        self.assertEqual(int(r["cog"]), 177)
+        self.assertEqual(r["sog"], 2.68)
 
     def test_hexdecode(self):
         port = HEXdecoder("dumps/onsdagsregatta-2016-08-17.dump", frequency=10, seek=4e4)
