@@ -45,7 +45,7 @@ from olddumpformat import dumpreader
 from nxbdump import nxbdump
 
 
-class GND10decoder(object):
+class GND10interface(object):
     stream = None
     n_msg = 0
     n_errors = 0
@@ -144,7 +144,7 @@ class GND10decoder(object):
                 buf = bytearray()
 
 
-class HEXdecoder(object):
+class HEXinterface(object):
     """
     Used for running with test data when the GND10 is not
     connected.
@@ -251,9 +251,9 @@ if __name__ == "__main__":
 
     if isfile(args.input):
         if args.input.startswith("/dev"):
-            reader = GND10decoder(args.input)
+            reader = GND10interface(args.input)
         else:
-            reader = HEXdecoder(args.input)
+            reader = HEXinterface(args.input)
     else:
         print("ERROR: Don't know how to read or open %s" % args.input)
         exit(1)

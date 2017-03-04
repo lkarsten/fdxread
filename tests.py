@@ -2,7 +2,7 @@ import logging
 import unittest
 import py_compile
 
-from fdxdecode import HEXdecoder
+from fdxread import HEXinterface
 from olddumpformat import dumpreader
 
 from glob import glob
@@ -31,7 +31,7 @@ class IntegrationTests(unittest.TestCase):
         "Verify that the FDX decoder can decode all files without hard errors"
         for fdxfile in glob("dumps/*.dump"):
             logging.info("Reading: " + fdxfile)
-            stream = HEXdecoder(fdxfile, frequency=None).recvmsg()
+            stream = HEXinterface(fdxfile, frequency=None).recvmsg()
             for res in stream:
                 pass  # No output
 
