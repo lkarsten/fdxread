@@ -27,7 +27,7 @@ import unittest
 import serial
 from binascii import hexlify
 from datetime import datetime
-from math import degrees, radians
+from math import degrees, radians, isnan
 from pprint import pprint
 from sys import argv, stdin, stdout, stderr
 from time import sleep, time
@@ -298,22 +298,28 @@ def FDXDecode(pdu):
         body = checklength(pdu, 13)
         # 1471551078.44 ('0x200828', 'gpsmsg1', {'strbody': '3b1ccb0a51b2e000e581', 'uints': '059 028 203 010 081 178 224 000 229'})
         # 0.0 ('0x200828', 'gpspos', {'strbody': '00000000000010001081',    -- # before position lock was attained
-        lat = Latitude(degree=body[0:8].uintle, minute=body[8:24].uintle * 0.001)
-        lon = Longitude(degree=body[24:32].uintle, minute=body[32:48].uintle * 0.001)
         # where is fix information? none, 2d, 3d?
         # hdop? elevation?
         keys = intdecoder(body[48:], width=8)
+        if strbody == "00000000000010001081":
+            keys += [("elevation", float("NaN")),
+                     ("pos", (float("NaN"), float("NaN"))),
+                     ("navigation.position.latitude", float("NaN")),
+                     ("navigation.position.longitude", float("NaN")),
+                    ]
+        else:
+            lat = Latitude(degree=body[0:8].uintle, minute=body[8:24].uintle * 0.001)
+            lon = Longitude(degree=body[24:32].uintle, minute=body[32:48].uintle * 0.001)
+            keys += [("elevation", body[64:72].uintle)]  # in feet
+            keys += [("pos", (lat, lon),)]
+            keys += [("navigation.position.latitude", lat)]
+            keys += [("navigation.position.longitude", lon)]
+            #keys += [("gmapspos", "https://www.google.com/maps?ie=UTF8&hq&q=%s,%s+(Point)&z=11" % (lat, lon))]
 
         # The gnd10-faked gps position message is 0x00000000000010001081, which
         # makes the last octet and the third last octet stand out.
         keys += [("fix1", body[48:56].uintle)]
         keys += [("null", body[56:64].uintle)]
-        keys += [("elevation", body[64:72].uintle)]  # in feet
-
-        keys += [("pos", LatLon(lat, lon).to_string())]
-        keys += [("navigation.position.latitude", str(lat))]
-        keys += [("navigation.position.longitude", str(lon))]
-        #keys += [("gmapspos", "https://www.google.com/maps?ie=UTF8&hq&q=%s,%s+(Point)&z=11" % (lat, lon))]
 
     elif mtype == 0x210425:
         mdesc = "gpscog"
@@ -624,6 +630,20 @@ class FDXDecodeTest(unittest.TestCase):
 
         r = FDXDecode("24 07 23 0f 1b 17 11 08 18 00 02 81")
         assert r["utctime"] == "2016-08-17T15:27:23"
+
+    def test_gps_position(self):
+        r = FDXDecode("20 08 28 00 00 00 00 00 00 10 00 10 81")  # No lock
+        self.assertEqual(r["mdesc"], "gpspos")
+        assert isnan(r["navigation.position.latitude"])
+        assert isnan(r["navigation.position.longitude"])
+
+        r = FDXDecode("20 08 28 3b 21 c3 0a ff 8e e0 00 42 81")  # Some position
+        self.assertEqual(r["mdesc"], "gpspos")
+        self.assertEqual(r["navigation.position.latitude"], Latitude(59.83255))
+        # Comparing floats ....
+        # AssertionError: Longitude 10.6101166667 != Longitude 10.6101166667
+        self.assertEqual(str(r["navigation.position.longitude"]),
+                         str(Longitude(10.6101166667)))
 
     def test_hexdecode(self):
         port = HEXdecoder("dumps/onsdagsregatta-2016-08-17.dump", frequency=10, seek=4e4)
