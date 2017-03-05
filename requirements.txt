@@ -1,5 +1,9 @@
 #
 bitstring==3.1.5
-nose2==0.6.5
 LatLon23==1.0.7
 pyserial==3.0.1
+# For running the tests
+nose2==0.6.5
+# for development
+#setuptools
+#twine

@@ -5,3 +5,6 @@ tags
 /venv
 /venv3
 /.cache
+/build
+/dist
+**egg-info
