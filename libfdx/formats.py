@@ -72,7 +72,7 @@ class format_signalk_delta(object):
             r += [('navigation.courseOverGroundTrue', radians(s["cog"])),
                   ('navigation.speedOverGroundTrue', knots2m(s["sog"]))]
         elif s["mdesc"] == "gpstime":
-            r += [("navigation.datetime.value", s["utctime"])]
+            r += [("navigation.datetime.value", s["utctime"].isoformat())]
 
         return dict(r)
 
@@ -119,13 +119,18 @@ class format_json(object):
 
 
 class TestFormatters(unittest.TestCase):
+    def un_isotime(self, s):
+        assert isinstance(s, str)
+        return datetime.strptime(s, "%Y-%m-%dT%H:%M:%S")
+
     def test_sk(self):
         formatter = format_signalk_delta()
         r = formatter.handle({"mdesc": "gpspos", "lat": 54.102466, "lon": 10.8079})
         self.assertAlmostEqual(r['navigation.position.longitude'], 10.8079)
 
-        r = formatter.handle({"utctime": "2017-01-12T19:16:55", "mdesc": "gpstime"})
+        r = formatter.handle({"utctime": self.un_isotime("2017-01-12T19:16:55"), "mdesc": "gpstime"})
         assert r == {'navigation.datetime.value': '2017-01-12T19:16:55'}
+
         if 0:
             r = formatter.handle({"mdesc": "gpscog", "sog": 0.16, "cog": 344.47058823529414})
             pprint(r)

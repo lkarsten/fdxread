@@ -25,6 +25,7 @@ import logging
 import unittest
 from datetime import datetime
 from functools import reduce
+from math import isnan
 from operator import xor
 from pprint import pprint, pformat
 
@@ -84,8 +85,16 @@ class format_NMEA0183(object):
 
         elif sample["mdesc"] == "gpstime":
             # Will be used later on.
-            self.gpstime = datetime.strptime(sample["utctime"],
-                                             "%Y-%m-%dT%H:%M:%S")
+            if isinstance(sample["utctime"], str):
+                self.gpstime = datetime.strptime(sample["utctime"],
+                                                 "%Y-%m-%dT%H:%M:%S")
+            elif isinstance(sample["utctime"], datetime):
+                self.gpstime = sample["utctime"]
+            else:
+                logging.warning("gpstime: unknown ts type %s" %
+                                type(sample["utctime"]))
+            assert self.gpstime is None or isinstance(self.gpstime, datetime)
+
 
         elif sample["mdesc"] == "gpspos":
             lat = Latitude(sample["lat"])

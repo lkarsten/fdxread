@@ -357,7 +357,9 @@ def FDXDecode(pdu):
         """
         mdesc = "gpstime"
         body = checklength(pdu, 12)
-        try:
+        if strbody in ["ffffff00000010ef81", "ffffff00808010ef81"]:
+            keys = [("utctime", float("NaN"))]
+        else:
             hour = body[0:8].uintle
             minute = body[8:16].uintle
             second = body[16:24].uintle
@@ -366,14 +368,18 @@ def FDXDecode(pdu):
 
             # This can't be right, can it?? :-)
             year = 1992 + body[40:56].uintle  # XXX: year?? 024 000 == 2016??
-            assert year < 3000
-            assert year > 2000
-            ts = datetime(year=year, month=month, day=day, hour=hour, minute=minute, second=second)
-            keys = [("utctime", ts.isoformat())]   # XXX: Cast to string later
-            keys += [("what?", body[56:64].uintle)]
 
-        except (ValueError, AssertionError) as e:
-            keys = [('ParseFault', str(e))]
+            try:
+                # Hello future readers. I don't care after I'm dead ;-)
+                assert year < 2150
+                assert year > 2000
+                ts = datetime(year=year, month=month, day=day, hour=hour, minute=minute, second=second)
+            except AssertionError as e:
+                logging.debug("gpstime year is %s -- %s body: %s" % (year, str(e), strbody))
+                ts = float("NaN")
+
+            keys = [("utctime", ts)]
+            keys += [("unknown", body[56:64].uintle)]
 
     elif mtype == 0x2c022e:
         mdesc = "dst200msg0"
@@ -421,7 +427,8 @@ class FDXDecodeTest(unittest.TestCase):
             FDXDecode("81 81")
 
         r = FDXDecode("24 07 23 0f 1b 17 11 08 18 00 02 81")
-        assert r["utctime"] == "2016-08-17T15:27:23"
+        assert isinstance(r["utctime"], datetime)
+        assert r["utctime"].isoformat() == "2016-08-17T15:27:23"
 
     def test_gps_position(self):
         r = FDXDecode("20 08 28 00 00 00 00 00 00 10 00 10 81")  # No lock
@@ -445,6 +452,11 @@ class FDXDecodeTest(unittest.TestCase):
         r = FDXDecode("21 04 25 0c 01 66 7e 15 81 ")  # Steaming ahead
         self.assertEqual(int(r["cog"]), 177)
         self.assertEqual(r["sog"], 2.68)
+
+        # gpstime
+        r = FDXDecode("24 07 23 11 26 1f 0f 08 18 00 37 81")
+        self.assertEqual(r["mdesc"], "gpstime")
+        assert isinstance(r["utctime"], datetime)
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
