@@ -142,7 +142,9 @@ class format_NMEA0183(object):
         else:
             if sample["mdesc"] not in ["emptymsg0", "gpsping", "static1s",
                                        "windsignal", "dst200depth2",
-                                       "gnd10msg2", "windmsg3", "wind40s"]:
+                                       "gnd10msg2", "windmsg3", "wind40s",
+                                       "dst200msg0", "service0", "windmsg7",
+                                       "windmsg8"]:
                 logging.warning("Unhandled: '%s'" % pformat(sample))
             else:
                 # Ignore known no-ops.
