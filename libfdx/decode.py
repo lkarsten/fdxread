@@ -329,6 +329,32 @@ def FDXDecode(pdu):
             return
 
     elif mtype == 0x240723:
+        """24 07 23 - gpstime (12 bytes, 1Hz update rate)
+
+        Pattern:
+        "24 07 23 0x xx xx 1b 07 18 00 yz 81".
+
+        x xx xx: went from "8 38 2a" to "a 24 01" in long dumps.
+
+        It wraps after 3b, so for the byte fields only 6 of 8 bits (& 0x3b) are in use.
+        Still unknown if all 4 bits are in use in the nibble field.
+
+        Why is this MSB left, when the 13 byte example is MSB right?
+
+        y: there are 16 subsequent frames with a value of y in (0,1,2,3).
+        z: appears to be some sort of checksum. no clear pattern.
+
+        Common messages:
+          ffffff00000010ef81 (nolock1)
+          ffffff00808010ef81 (nolock2)
+
+        Flaps data alternates between nolock1 and nolock2 during startup.
+
+        If the GPS is not connected, the sequence counter keeps going up but everything
+        else is static:
+        ('0x240723', 'gpstime', {'rawbody': '0013391f0cfd00c481', 'uints':
+         '036 007 035 000 019 057 031 012 253 000 196'})
+        """
         mdesc = "gpstime"
         body = checklength(pdu, 12)
         try:
