@@ -2,5 +2,9 @@
 set -o errexit
 
 dumps=$(find dumps -name \*.dump)
-echo $dumps | xargs -P16 -n1 -- ./fdxread.py --format raw --pace 0 1>/dev/null
+
+#echo $dumps | xargs -P16 -n1 -- ./fdxread.py --format raw --pace 0 1>/dev/null
+echo $dumps | xargs -P16 -n1 -- ./fdxread.py --format nmea0183 --pace 0 1>/dev/null
+#echo $dumps | xargs -P16 -n1 -- ./fdxread.py --format json --pace 0 1>/dev/null
+#echo $dumps | xargs -P16 -n1 -- ./fdxread.py --format signalk --pace 0 1>/dev/null
 
