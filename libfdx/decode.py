@@ -116,12 +116,11 @@ def FDXDecode(pdu):
 
     if mtype == 0x000202:
         mdesc = "emptymsg0"
-        keys = []
-        if strbody not in ['ffff0081', '00000081']:
-            keys = [('fault', "unexpected body (got %s, expected 0xffff0081 or 0x00000081" %
-                     (strbody))]
-#        else:
-#            return
+        if strbody in ['ffff0081', '00000081']:
+            # No use in cluttering the output.
+            return None
+        body = checklength(pdu, None)
+        keys = intdecoder(body, width=16)
 
     elif mtype == 0x010405:
         mdesc = "gnd10msg3"
