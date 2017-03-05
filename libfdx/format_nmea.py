@@ -97,9 +97,13 @@ class format_NMEA0183(object):
 
 
         elif sample["mdesc"] == "gpspos":
-            lat = Latitude(sample["lat"])
-            lon = Longitude(sample["lon"])
-            self.gpspos = LatLon(lat, lon)
+            lat = sample["lat"]
+            lon = sample["lon"]
+
+            if isnan(lat) or isnan(lon):
+                pass
+            else:
+                self.gpspos = LatLon(lat, lon)
 
         elif sample["mdesc"] == "gpscog":
             if self.gpstime is None or self.gpspos is None:
