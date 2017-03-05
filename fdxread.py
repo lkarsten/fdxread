@@ -38,10 +38,11 @@ from time import time, sleep
 
 import serial
 
-from fdxdecode import FDXDecode, DataError, FailedAssumptionError
-from olddumpformat import dumpreader
-from nxbdump import nxbdump
+from libfdx import *
 
+#from fdxdecode import FDXDecode, DataError, FailedAssumptionError
+#from olddumpformat import dumpreader
+#from nxbdump import nxbdump
 
 class GND10interface(object):
     stream = None
