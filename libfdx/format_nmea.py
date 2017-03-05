@@ -17,11 +17,7 @@
 #  Copyright (C) 2016 Lasse Karstensen
 #
 """
-Take the output from the fdx decoder and create some rudimentary NMEA0183 from
-it.
-
-By feeding this into OpenCPN (via kplex in tcp mode), we
-get some visualization.
+Take the output from the FDX decoder and create NMEA0183 from it.
 """
 from __future__ import print_function
 

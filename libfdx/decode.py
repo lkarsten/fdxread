@@ -35,8 +35,8 @@ from time import sleep, time
 from LatLon23 import LatLon, Latitude, Longitude
 from bitstring import BitArray
 
-from olddumpformat import dumpreader
-from nxbdump import nxbdump
+from .dumpreader import dumpreader
+from .nxbdump import nxbdump
 
 class DataError(Exception):
     pass

@@ -202,13 +202,15 @@ if __name__ == "__main__":
         description="fdxread - Nexus FDX parser (incl. Garmin GND10)",
         epilog="fdxread is used read FDX protocol data from Garmin GND10 units.")
 
-    parser.add_argument("input", help="Serial port or file to read from.\nExamples: /dev/ttyACM0, COM3, ./file.dump", metavar="inputfile")
-    parser.add_argument("--output", help="Output mode, default NMEA0183. Possible: json, signalk, nmea0183, raw", default="nmea0183", metavar="format")
-
+    parser.add_argument("input", help="Serial port or file to read from.\nExamples: /dev/ttyACM0, COM3, ./file.dump",
+                        metavar="inputfile")
+    parser.add_argument("--format", help="Output mode, default nmea0183. (json, signalk, nmea0183, raw)",
+                        default="nmea0183", metavar="fmt")
+    parser.add_argument("--seek", help="Seek this many bytes into file before starting (for files)",
+                        metavar="n", default=0, type=int)
+    parser.add_argument("--pace", help="Pace reading to n messages per second (for files)",
+                        metavar="n", default=20.0, type=float)
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
-
-    parser.add_argument("--seek", help="Seek this many bytes into file before starting (for files)", metavar="n", default=0, type=int)
-    parser.add_argument("--pace", help="Pace reading to n messages per second (for files)", metavar="n", default=20.0, type=float)
 
     if len(argv) == 1:
         parser.print_help()
@@ -220,19 +222,14 @@ if __name__ == "__main__":
     else:
         logging.basicConfig(level=logging.INFO)
 
-
-    args.output = args.output.lower()
-    if args.output == "nmea0183":
-        from nmeaformat import format_NMEA0183
+    args.format = args.format.lower()
+    if args.format == "nmea0183":
         fmter = format_NMEA0183(joinlines=True)
-    elif args.output == "json":
-        from formats import format_json
+    elif args.format == "json":
         fmter = format_json(devmode=False)
-    elif args.output == "raw":
-        from formats import format_json
+    elif args.format == "raw":
         fmter = format_json(devmode=True)
-    elif args.output == "signalk":
-        from formats import format_signalk_delta
+    elif args.format == "signalk":
         fmter = format_signalk_delta()
     else:
         parser.print_help()
