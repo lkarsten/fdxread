@@ -158,12 +158,16 @@ def FDXDecode(pdu):
         keys += intdecoder(body[16:], width=16)
 
     elif mtype == 0x030102:
-        mdesc = "emptymsg0"
-        body = checklength(pdu, 6)
-        keys = intdecoder(body)  # XX
-        if body.int != 0:
-            raise FailedAssumptionError(mdesc, "body should be zero (got %s)" % body)
-        return
+        mdesc = "emptymsg3"
+        if len(strbody) == 0:  # Zero data bytes, as seen in early dumps.
+            return
+
+        if (len(pdu) / 2 == 6):  # Two data bytes, seen in Baker dataset.
+            if strbody in ["000081", "020281"]:
+                return # Nothing to report if always the same.
+
+        body = checklength(pdu, None)
+        keys = intdecoder(body)
 
     elif mtype == 0x070304:
         mdesc = "dst200depth"   # previously "dst200msg3"
