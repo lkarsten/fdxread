@@ -192,37 +192,7 @@ class TestNMEA0183(unittest.TestCase):
         assert isinstance(r, str)
         assert r == "$ZZXDR,P,101.42000,B,Barometer*21\n$ZZXDR,C,21.00,C,TempDir*10"
 
-def main():
-    logging.basicConfig(level=logging.INFO)
-    if "--test" in argv:
-        argv.pop(argv.index("--test"))
-        unittest.main()
-        exit()
-
-    formatter = format_NMEA0183(joinlines=False)
-
-    while True:
-        line = stdin.readline()
-        if len(line) == 0:
-            break
-        line = line.strip()
-        if len(line) <= 2:
-            continue
-        if line.startswith("#"):
-            continue
-
-        try:
-            sample = json.loads(line)
-        except ValueError:
-            logging.error("Invalid JSON: %s" % line)
-            continue
-
-        nmealines = formatter.handle(sample)
-        if nmealines:
-            for line in nmealines:
-                print(line)
-                stdout.flush()
-
 
 if __name__ == "__main__":
-    main()
+    logging.basicConfig(level=logging.INFO)
+    unittest.main()

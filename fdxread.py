@@ -40,9 +40,6 @@ import serial
 
 from libfdx import *
 
-#from fdxdecode import FDXDecode, DataError, FailedAssumptionError
-#from olddumpformat import dumpreader
-#from nxbdump import nxbdump
 
 class GND10interface(object):
     stream = None

@@ -17,16 +17,14 @@
 # Copyright (C) 2016-2017 Lasse Karstensen
 #
 """
-Garmin GND10 protocol decoder.
-
-Decode the bitstream seen from the Garmin GND10 USB port.
+FDX decoder
 """
 from __future__ import print_function
 
+import doctest
 import json
 import logging
 import unittest
-import serial
 from binascii import hexlify
 from datetime import datetime
 from math import degrees, radians, isnan
@@ -387,54 +385,6 @@ def FDXDecode(pdu):
     keys += [('mdesc', mdesc)]
     return dict(keys)
 
-def StreamDecoder():
-    """
-    # At some point this should be able to read from the serial port
-    # by itself, to avoid the chaining.
-    """
-    while True:
-        line = stdin.readline()
-        if len(line) == 0:
-            break
-        line = line.strip()
-        if len(line) <= 2:
-            continue
-        if line.startswith("#"):
-            continue
-
-        l = line.split("\t", 3)
-        #print "'%s'" % line, l
-        ts, mlen, pdu = (float(l[0]), int(l[1]), l[2])
-        if not pdu[-2:] == '81':
-            print("# Skipping invalid input line: %s" % line, file=stderr)
-            continue
-
-        try:
-            res = FDXDecode(pdu)
-        except DataError as e:
-            print("# DataError: %s %s %s" % (pdu[:3], pdu[3:], str(e)), file=stderr)
-        except NotImplementedError as e:
-            print("# INCOMPLETE: %s" % (str(e)), file=stderr)
-        except FailedAssumptionError as e:
-            print("# FAULT: %s assumption: %s" % (pdu, str(e)), file=stderr)
-        else:
-            if res is not None:
-#                print "%.3f %s" % (ts, res)
-                try:
-                    if ts > 2:
-                        ts = datetime.fromtimestamp(ts)
-                        #res["ts"] = ts.isoformat()
-                        print(json.dumps(res, default=json_serial))
-                    else:
-                        print(res)
-                except IOError:
-                    return
-
-        try:
-            stdout.flush()
-        except IOError:
-            return
-
 
 class FDXDecodeTest(unittest.TestCase):
     def test_simple(self):
@@ -471,15 +421,6 @@ class FDXDecodeTest(unittest.TestCase):
         self.assertEqual(r["sog"], 2.68)
 
 if __name__ == "__main__":
-    if "-v" in argv:
-        argv.pop(argv.index("-v"))
-        logging.basicConfig(level=logging.DEBUG)
-
-    if len(argv) > 1 and argv[1] == "--test":
-        argv.pop(argv.index("--test"))
-        import doctest
-        doctest.testmod()
-        unittest.main()
-        exit()
-    else:
-        StreamDecoder()
+    logging.basicConfig(level=logging.DEBUG)
+    doctest.testmod()
+    unittest.main()

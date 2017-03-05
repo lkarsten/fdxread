@@ -13,7 +13,7 @@
 #  with this program; if not, write to the Free Software Foundation, Inc.,
 #  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
-#  Copyright (C) 2016 Lasse Karstensen
+#  Copyright (C) 2016-2017 Lasse Karstensen
 #
 """
 Parse the variety of hexdump dump files (in different formats from evolving
@@ -60,7 +60,7 @@ def dumpreader(inputfile, trim=False, seek=0):
 
 if __name__ == "__main__":
     if len(argv) < 2 or not exists(argv[-1]):
-        print("Usage: %s dumpfile" % argv[0], file=stderr)
+        print("Usage: %s dumpfile.fdx" % argv[0], file=stderr)
         exit(1)
 
     for record in dumpreader(argv[1]):
