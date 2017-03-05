@@ -37,7 +37,7 @@ Requires python-serial and LatLon23, as specified in requirements.txt. Tested on
       --pace n       Pace reading to n messages per second (for files)
       -v, --verbose  Verbose output
 
-    fdxread is used read FDX protocol data from Garmin GND10 units.
+    fdxread is used to read FDX protocol data from Garmin GND10 units.
 ```
 
 
