@@ -1,13 +1,16 @@
-# Garmin GND10 connector
+FDX reader for Garmin GND10
+===========================
 
-This is software to use the USB port on Garmin GND10 gateways.
+This is software to read the FDX protocol data seen on the USB port of Garmin
+GND10 gateways.
 
 The GND10 unit is used on boats and translates between Nexus FDX and NMEA2000.
-The USB port on it outputs something called FDX, which is reverse engineered here.
 
-Requires python-serial and LatLon23, as specified in requirements.txt. Tested on Linux and OS X.
+Installation
+------------
 
-## Installation
+fdxread requirements are listed in `requirements.txt` and should be installed
+using pip.
 
 ```
     git clone https://github.com/lkarsten/GND10read.git
@@ -17,10 +20,12 @@ Requires python-serial and LatLon23, as specified in requirements.txt. Tested on
     pip install -r requirements.txt
 ```
 
-## Running it
+Tested on Linux and OS X.
+
+Running it
+----------
 
 ```
-
     $ ./fdxread.py -h
     usage: fdxread.py [-h] [--format fmt] [--seek n] [--pace n] [-v] inputfile
 
@@ -54,21 +59,24 @@ output to it using netcat. That way OpenCPN can read it easily, and I get to
 know where I am on the map.
 
 
-## Background information
+Background information
+----------------------
 
 Everything here is deduced from staring at the arriving bytes while
-disconnecting some units and motoring in circles. Something was pretty simple
-to figure out, some other metrics I'm still not sure is right.
+disconnecting some units and motoring in circles. Something was pretty simple to
+figure out, some other metrics I'm still not sure is right.
 
 Use at your own risk.
 
-On a side note, I believe this is the only open/freely available document on
-the packet format of the Fast Data eXchange (FDX) protocol used in Nexus Marine AB's
+On a side note, I believe this is the only open/freely available document on the
+packet format of the Fast Data eXchange (FDX) protocol used in Nexus Marine AB's
 Nexus products. See `fdxprotocol.rst` for notes taken while working this out.
 
-## License
+License
+-------
 
-The contents of this repository is licensed under GNU GPLv2. See the `LICENSE` file for more information.
+The contents of this repository is licensed under GNU GPLv2. See the `LICENSE`
+file for more information.
 
 Copyright (C) 2016-2017 Lasse Karstensen
 
