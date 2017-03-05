@@ -12,69 +12,45 @@ Installation
 ------------
 
 ::
-	git clone https://github.com/lkarsten/GND10read.git
-	cd GND10read
-	virtualenv --system-site-packages venv
-	. venv/bin/activate
-	pip install -r requirements.txt
+
+    git clone https://github.com/lkarsten/GND10read.git
+    cd GND10read
+    virtualenv --system-site-packages venv
+    . venv/bin/activate
+    pip install -r requirements.txt
 
 
 Running it
 ----------
 
 ::
-	$ ./fdxread.py -h
-	usage: fdxread.py [-h] [--output format] [-v] [--seek n] [--pace n] inputfile
+    $ ./fdxread.py -h
+    usage: fdxread.py [-h] [--format fmt] [--seek n] [--pace n] [-v] inputfile
 
-	fdxread - Nexus FDX parser (incl. Garmin GND10)
+    fdxread - Nexus FDX parser (incl. Garmin GND10)
 
-	positional arguments:
-	  inputfile        Serial port or file to read from. Examples: /dev/ttyACM0,
-			   COM3, ./file.dump
+    positional arguments:
+      inputfile      Serial port or file to read from. Examples: /dev/ttyACM0,
+                     COM3, ./file.dump
 
-	optional arguments:
-	  -h, --help       show this help message and exit
-	  --output format  Output mode, default NMEA0183. Possible: json, signalk,
-			   nmea0183, raw
-	  -v, --verbose    Verbose output
-	  --seek n         Seek this many bytes into file before starting (for files)
-	  --pace n         Pace reading to n messages per second (for files)
+    optional arguments:
+      -h, --help     show this help message and exit
+      --format fmt   Output mode, default nmea0183. (json, signalk, nmea0183, raw)
+      --seek n       Seek this many bytes into file before starting (for files)
+      --pace n       Pace reading to n messages per second (for files)
+      -v, --verbose  Verbose output
 
-	fdxread is used read FDX protocol data from Garmin GND10 units.
+    fdxread is used read FDX protocol data from Garmin GND10 units.
 
 
 ::
 	(inside a populated virtualenv, as described above)
-	./fdxread /dev/ttyACM0
+	./fdxread.py /dev/ttyACM0
 
 This will read FDX from ttyACM0, and output NMEA0183 to stdout.
 
-
-Running it (old version)
-------------------------
-
-Right now the different tools in here should be chained together with unix
-pipes. To make it more user friendly down the road this may change, but for the
-time being, use::
-
-    $ ./dumpserial.py | ./fdxdecode.py | ./nmeaformat.py 2>/dev/null
-
-This will read binary messages from `/dev/ttyACM0` (default), hexdump it in the format
-that ``fdxdecode.py`` expects, and feed it into it. ``fdxdecode.py`` will decode the data fields
-and (currently) output a small JSON snippet per line, which ``nmeaformat.py`` will turn into
-NMEA0183.
-
-If you want to replay an old hex file::
-
-    $ ./olddumpformat.py dumps/foo.dump  | ./fdxdecode.py  | ./nmeaformat.py 2>/dev/null
-    $FVMWV,214.56,R,1.13,K,A,*3
-    $SDDBT,,f,5.21,m,,F,*3C
-    $SDVHW,0.0,T,0.0,M,0.00,N,0.0,K,*5E
-    $FVMWV,214.56,R,1.13,K,A,*3
-    [..]
-
 To avoid having to muck around with serial ports and locking, I usually run a kplex_ TCP
-server on port 10110, and pipe the output from ``nmeaformat.py`` to it using netcat. That way
+server on port 10110, and pipe the output to it using netcat. That way
 OpenCPN can read it easily, and I get to know where I am on the map.
 
 .. _kplex: http://www.stripydog.com/kplex/
