@@ -84,30 +84,6 @@ it is up around 64000. When reaching, around 40000.
 Doing turns and watching the AWA? counter, it does seem to follow the "TWA" on the left display (which is awa, because no stw right now). I think it is the right bitfield, but the scaling is wrong. Revisit.
 
 
-"02 03 01" group (8 bytes) name: dst200depth2
----------------------------------------------
-
-Previously: dst200msg1
-5Hz update rate.
-
-Reduced set of distinct bodies seen when DST200 is disconnected:
-   2 '0600000681'})
-  10 '0800000881'})
-   6 '0a00000a81'})
-   4 '0c00000c81'})
-   3 '0e00000e81'})
-  44 '1015000581'})
-  56 '1016000681'})
-  25 'a90100a881'})
- 350 'ffff000081'})
-
-Very wide set of values seen with DST200 connected. Origin most likely DST200.
-
-First 16 bits is depth, 16 bit le.
-
-
-
-
 "03 01 02" (6 Bytes) - desc: emptymsg1
 --------------------------------------
 

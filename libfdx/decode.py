@@ -140,7 +140,23 @@ def FDXDecode(pdu):
         keys += [('aws_lo', body[32:46].uintle * 0.01)]
 
     elif mtype == 0x020301:
-        mdesc = "dst200depth2"
+        """02 03 01 - dst200temp (8 bytes, 5 Hz update rate)
+        Previously: dst200msg1, dst200depth2
+
+        Reduced set of distinct bodies seen when DST200 is disconnected:
+           2 '0600000681'})
+          10 '0800000881'})
+           6 '0a00000a81'})
+           4 '0c00000c81'})
+           3 '0e00000e81'})
+          44 '1015000581'})
+          56 '1016000681'})
+          25 'a90100a881'})
+         350 'ffff000081'})
+        Very wide set of values seen with DST200 connected. Origin most likely DST200.
+        """
+        mdesc = "dst200temp"
+
         if strbody in ['ffff000081', '0000000081']:
             return
         body = checklength(pdu, 8)
