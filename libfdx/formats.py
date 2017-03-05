@@ -72,7 +72,8 @@ class format_signalk_delta(object):
             r += [('navigation.courseOverGroundTrue', radians(s["cog"])),
                   ('navigation.speedOverGroundTrue', knots2m(s["sog"]))]
         elif s["mdesc"] == "gpstime":
-            r += [("navigation.datetime.value", s["utctime"].isoformat())]
+            if isinstance(s["utctime"], datetime):
+                r += [("navigation.datetime.value", s["utctime"].isoformat())]
 
         return dict(r)
 

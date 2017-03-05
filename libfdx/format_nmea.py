@@ -84,15 +84,13 @@ class format_NMEA0183(object):
                         "K")]
 
         elif sample["mdesc"] == "gpstime":
-            # Will be used later on.
-            if isinstance(sample["utctime"], str):
-                self.gpstime = datetime.strptime(sample["utctime"],
+            if isinstance(sample["utctime"], str):  # For the test cases.
+                sample["utctime"] = datetime.strptime(sample["utctime"],
                                                  "%Y-%m-%dT%H:%M:%S")
-            elif isinstance(sample["utctime"], datetime):
+            # Will be used later on.
+            if isinstance(sample["utctime"], datetime):
                 self.gpstime = sample["utctime"]
-            else:
-                logging.warning("gpstime: unknown ts type %s" %
-                                type(sample["utctime"]))
+
             assert self.gpstime is None or isinstance(self.gpstime, datetime)
 
 

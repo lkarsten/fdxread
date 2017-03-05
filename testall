@@ -1,0 +1,6 @@
+#!/bin/bash -x
+set -o errexit
+
+dumps=$(find dumps -name \*.dump)
+echo $dumps | xargs -P16 -n1 -- ./fdxread.py --format raw --pace 0 1>/dev/null
+
