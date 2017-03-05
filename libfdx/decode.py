@@ -52,14 +52,15 @@ def fahr2celcius(temp):
 def checklength(pdu, speclen):
     "pdu is hex encoded, 4 bits per char."
     assert type(pdu) == str
-    assert type(speclen) == int
+    assert speclen is None or isinstance(speclen, int)
 
     assert len(pdu) >= 3*2
     assert len(pdu) % 2 == 0
 
-    if len(pdu)/2 != speclen:
-        raise DataError("mtype=0x%s: Incorrect length, expected %s. (got %s) - body: %s" %
-                        (pdu[:3*2], speclen, len(pdu)/2, pdu[3*2:]))
+    if speclen is not None:
+        if len(pdu)/2 != speclen:
+            raise DataError("mtype=0x%s: Incorrect length, expected %s. (got %s) - body: %s" %
+                            (pdu[:3*2], speclen, len(pdu)/2, pdu[3*2:]))
     return BitArray(hex=pdu[3*2:-1*2])
 
 
