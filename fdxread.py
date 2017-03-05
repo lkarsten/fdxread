@@ -197,7 +197,7 @@ def json_serial(obj):
     raise TypeError("Type %s not serializable" % type(obj))
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(
         description="fdxread - Nexus FDX parser (incl. Garmin GND10)",
         epilog="fdxread is used to read FDX protocol data from Garmin GND10 units.")
@@ -256,3 +256,6 @@ if __name__ == "__main__":
         output = fmter.handle(buf)
         if output:
             print(output)
+
+if __name__ == "__main__":
+    main()
