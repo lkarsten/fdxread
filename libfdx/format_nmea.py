@@ -21,14 +21,12 @@ Take the output from the FDX decoder and create NMEA0183 from it.
 """
 from __future__ import print_function
 
-import json
 import logging
 import unittest
 from datetime import datetime
 from functools import reduce
 from operator import xor
 from pprint import pprint, pformat
-from sys import argv, stdin, stdout, stderr
 
 from LatLon23 import LatLon, Latitude, Longitude
 
@@ -144,7 +142,7 @@ class format_NMEA0183(object):
                                        "windsignal", "dst200depth2",
                                        "gnd10msg2", "windmsg3", "wind40s",
                                        "dst200msg0", "service0", "windmsg7",
-                                       "windmsg8"]:
+                                       "windmsg8", "windstale"]:
                 logging.warning("Unhandled: '%s'" % pformat(sample))
             else:
                 # Ignore known no-ops.
@@ -173,9 +171,9 @@ class TestNMEA0183(unittest.TestCase):
     def test_gps(self):
         formatter = format_NMEA0183(joinlines=False)
         r = formatter.handle({"mdesc": "gpspos", "lat": 54.10246, "lon": 10.8079})
-        assert r is None
+        assert r is None   # Should be empty.
         r = formatter.handle({"utctime": "2017-01-12T19:16:55", "mdesc": "gpstime"})
-        assert r is None
+        assert r is None   # Should be empty also.
 
         r = formatter.handle({"mdesc": "gpscog", "sog": 0.16, "cog": 344.47058823529414})
         assert len(r) == 2
