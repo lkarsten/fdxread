@@ -1,7 +1,5 @@
-
-# bitstring
-nose2
-LatLon23
-
-# fdxdecode.py, dumpserial.py
+#
+bitstring==3.1.5
+nose2==0.6.5
+LatLon23==1.0.7
 pyserial==3.0.1

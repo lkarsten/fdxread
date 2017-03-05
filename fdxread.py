@@ -14,7 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
-# Copyright (C) 2016 Lasse Karstensen
+# Copyright (C) 2016-2017 Lasse Karstensen
 #
 """
 Garmin GND10 protocol decoder.
