@@ -69,8 +69,9 @@ figure out, some other metrics I'm still not sure is right.
 Use at your own risk.
 
 On a side note, I believe this is the only open/freely available document on the
-packet format of the Fast Data eXchange (FDX) protocol used in Nexus Marine AB's
-Nexus products. See `fdxprotocol.rst` for notes taken while working this out.
+frame format of the `Fast Data eXchange (FDX)` protocol used in Nexus Marine
+AB's Nexus products, now owned by Garmin. See `fdxprotocol.rst` and
+`libfdx/decode.py` for notes taken while working this out.
 
 License
 -------
