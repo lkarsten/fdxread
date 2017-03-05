@@ -1,10 +1,14 @@
 #!/bin/bash -x
 set -o errexit
 
+# Run fewer jobs on the Travis CI system.
+CORES=8
+test -n "$CI" && CORES=2
+
 dumps=$(find dumps -name \*.dump)
 
-#echo $dumps | xargs -P16 -n1 -- ./fdxread.py --format raw --pace 0 1>/dev/null
-echo $dumps | xargs -P16 -n1 -- ./fdxread.py --format nmea0183 --pace 0 1>/dev/null
-#echo $dumps | xargs -P16 -n1 -- ./fdxread.py --format json --pace 0 1>/dev/null
-#echo $dumps | xargs -P16 -n1 -- ./fdxread.py --format signalk --pace 0 1>/dev/null
+#echo $dumps | xargs -P${CORES} -n1 -- ./fdxread.py --format raw --pace 0 1>/dev/null
+echo $dumps | xargs -P${CORES} -n1 -- ./fdxread.py --format nmea0183 --pace 0 1>/dev/null
+#echo $dumps | xargs -P${CORES} -n1 -- ./fdxread.py --format json --pace 0 1>/dev/null
+#echo $dumps | xargs -P${CORES} -n1 -- ./fdxread.py --format signalk --pace 0 1>/dev/null
 
