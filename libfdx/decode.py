@@ -70,7 +70,7 @@ def intdecoder(body, width=8, signed=False):
     assert width in [8, 16]  # for now, due to fmt.
     fmt = "%03i"
     if width == 16:
-        fmt = "%06i"
+        fmt = "%05i"
 
     s = []
     for idx in range(0, body.len, width):
