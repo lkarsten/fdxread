@@ -46,7 +46,10 @@ def main():
                         metavar="n", default=0, type=int)
     parser.add_argument("--pace", help="Pace reading to n messages per second (for files)",
                         metavar="n", default=20.0, type=float)
+    parser.add_argument("--send-psilfdx", help="Send initial mode change command to port (for NX2 server) (experimental)",
+                        action="store_true")
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
+
 
     if len(argv) == 1:
         parser.print_help()
@@ -74,9 +77,9 @@ def main():
     if int(args.pace) == 0:
         args.pace = None
 
-    if isfile(args.input):
+    if exists(args.input):
         if args.input.startswith("/dev"):
-            reader = GND10interface(args.input)
+            reader = GND10interface(args.input, send_modechange=args.send_psilfdx)
         else:
             reader = HEXinterface(args.input, seek=args.seek, frequency=args.pace)
     else:

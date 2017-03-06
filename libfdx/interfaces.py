@@ -45,8 +45,9 @@ class GND10interface(object):
     read_timeout = 0.3
     reset_sleep = 2
 
-    def __init__(self, serialport):
+    def __init__(self, serialport, send_modechange=False):
         self.serialport = serialport
+        self.send_modechange = send_modechange
 
     def __del__(self):
         if self.stream is not None:
@@ -86,6 +87,14 @@ class GND10interface(object):
                     else:
                         logging.error("errno: %s message: %s all: %s" % (e.errno, e.message, str(e)))
                         raise
+
+                # After successful open, send the mode change if asked to.
+                if self.send_modechange:
+                    try:
+                        self.stream.write("$PSILFDX,,R\n".encode("ascii"))
+                    except serial.serialutil.SerialException as e:
+                        logging.error("errno: %s message: %s all: %s" % (e.errno, e.message, str(e)))
+                        self.close()
 
             try:
                 chunk = self.stream.read(1)  # Inefficient but easily understood.
