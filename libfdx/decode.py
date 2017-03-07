@@ -197,6 +197,47 @@ def FDXDecode(pdu):
         body = checklength(pdu, None)
         keys = intdecoder(body)
 
+    elif mtype == 0x050207:
+        """05 02 07 - baker_alpha (2-3Hz)
+
+        Unknown 7 byte frame type seen in the Baker data file.
+
+        Pattern 05 02 07 xx ff yy 81
+        211 < xx < 259,
+        6 < yy < 55. usually jumps in increments of ~10.
+
+        """
+        mdesc = "baker_alpha"
+        body = checklength(pdu, 7)
+
+        if body[8:16].uintle != 0xff:
+            raise FailedAssumptionError(mdesc, "Middle char not 0xff, but %s" % str(body[8:16]))
+        keys = intdecoder(body)
+
+    elif mtype == 0x060204:
+        """06 02 04 - baker_bravo (n Hz)
+
+        Unknown 7 byte frame type seen in the Baker data file.
+
+        24 ff db 81
+        2d ff d2 81
+        1a ff e5 81
+        10 ff ef 81
+
+        Pattern: 06 02 04 xx ff yy 81
+
+        xx < 100
+        160 < yy < 239
+
+        Same ~10 increments as 0x050207.
+        """
+        mdesc = "baker_bravo"
+        body = checklength(pdu, 7)
+        keys = intdecoder(body)
+        if body[8:16].uintle != 0xff:
+            raise FailedAssumptionError(mdesc, "Middle char not 0xff, but %s" % str(body[8:16]))
+
+
     elif mtype == 0x070304:
         mdesc = "dst200depth"   # previously "dst200msg3"
         if strbody in ['ffff000081']:
@@ -230,6 +271,20 @@ def FDXDecode(pdu):
             raise FailedAssumptionError(mdesc, "xx != yy (got %s, expect %s)"
                                         % (xx, yy))
         keys = [('xx', xx)]
+
+    elif mtype == 0x0f040b:
+        """0f 04 0b - baker_charlie (1 Hz)
+
+        Unknown 9 byte frame type seen in the Baker data file.
+
+        Always 0f 04 0b 66 53 a6 04 97 81.
+        """
+        mdesc = "baker_charlie"
+        if strbody != "6653a6049781":
+            raise FailedAssumptionError(mdesc, "got %s, expected %s"
+                                        % (strbody, "6653a6049781"))
+        return
+
 
     elif mtype == 0x110213:
         mdesc = "windstale"
