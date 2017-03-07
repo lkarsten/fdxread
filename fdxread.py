@@ -45,7 +45,7 @@ def main():
     parser.add_argument("--seek", help="Seek this many bytes into file before starting (for files)",
                         metavar="n", default=0, type=int)
     parser.add_argument("--pace", help="Pace reading to n messages per second (for files)",
-                        metavar="n", default=20.0, type=float)
+                        metavar="n", default=0, type=float)
     parser.add_argument("--send-psilfdx", help="Send initial mode change command to port (for NX2 server) (experimental)",
                         action="store_true")
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose output")

@@ -161,7 +161,7 @@ class HEXinterface(object):
     n_msg = 0
     n_errors = 0
 
-    def __init__(self, inputfile, frequency=10.0, seek=0):
+    def __init__(self, inputfile, frequency=None, seek=0):
         self.inputfile = inputfile
         self.seek = seek
         self.frequency = frequency
