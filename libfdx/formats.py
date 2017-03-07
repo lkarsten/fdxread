@@ -117,6 +117,12 @@ class format_json(object):
 
         if s is None:
             return None
+
+        if self.devmode:
+            mdesc = s["mdesc"]
+            del s["mdesc"]
+            return "%s\t%s" % (mdesc, json.dumps(s, default=json_serial))
+
         return json.dumps(s, default=json_serial)
 
 
