@@ -103,6 +103,7 @@ def FDXDecode(pdu):
 
     mtype = int(pdu[:6], 16)
     strbody = pdu[6:]
+    keys = []
     assert len(strbody) % 2 == 0
     # This is bit confusing, as pdu has 4 bits per char,
     # so this is half of the strlen of the pdu.
