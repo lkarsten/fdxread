@@ -64,8 +64,8 @@ def checklength(pdu, speclen):
 
     if speclen is not None:
         if len(pdu)/2 != speclen:
-            raise DataError("mtype=0x%s: Incorrect length, expected %s. (got %s) - body: %s" %
-                            (pdu[:3*2], speclen, len(pdu)/2, pdu[3*2:]))
+            raise DataError("mtype=0x%s: Incorrect length %s (got %s) body: %s"
+                            % (pdu[:3*2], speclen, len(pdu)/2, pdu[3*2:]))
     return BitArray(hex=pdu[3*2:-1*2])
 
 
@@ -112,7 +112,8 @@ def FDXDecode(pdu):
                 0x0c008d, 0xc70a2f, 0xc70a92]
     if mtype in skiplist:
         if len(strbody) > 1*2:  # Small backstop measure.
-            raise FailedAssumptionError("body should be small (got '%s')" % strbody)
+            raise FailedAssumptionError("body should be small (got '%s')" %
+                                        strbody)
         return
 
     if 0:
@@ -158,7 +159,8 @@ def FDXDecode(pdu):
           56 '1016000681'})
           25 'a90100a881'})
          350 'ffff000081'})
-        Very wide set of values seen with DST200 connected. Origin most likely DST200.
+        Very wide set of values seen with DST200 connected. Origin most
+        likely DST200.
         """
         mdesc = "dst200temp"
 
@@ -222,7 +224,8 @@ def FDXDecode(pdu):
         xx = body[0:8].uintle
         yy = body[8:16].uintle
         if xx != yy:
-            raise FailedAssumptionError(mdesc, "xx != yy (got %s, expected %s)" % (xx, yy))
+            raise FailedAssumptionError(mdesc, "xx != yy (got %s, expect %s)"
+                                                % (xx, yy))
         keys = [('xx', xx)]
 
     elif mtype == 0x110213:
@@ -256,7 +259,7 @@ def FDXDecode(pdu):
         mdesc = "static2s_two"
         if strbody != '0080ffffff7f81':
             keys = [('fault', "Non-static body seen. (got %s, expected %x)" %
-                                        (strbody, 0x0080ffffff7f81))]
+                              (strbody, 0x0080ffffff7f81))]
         else:
             return   # no use in logging it. static.
 
@@ -310,8 +313,11 @@ def FDXDecode(pdu):
                      ("lon", float("NaN")),
                     ]
         else:
-            lat = Latitude(degree=body[0:8].uintle, minute=body[8:24].uintle * 0.001)
-            lon = Longitude(degree=body[24:32].uintle, minute=body[32:48].uintle * 0.001)
+            lat = Latitude(degree=body[0:8].uintle,
+                           minute=body[8:24].uintle * 0.001)
+            lon = Longitude(degree=body[24:32].uintle,
+                            minute=body[32:48].uintle * 0.001)
+
             keys += [("elevation", feet2meter(body[64:72].uintle))]
             keys += [("lat", lat), ("lon", lon)]
             #keys += [("gmapspos", "https://www.google.com/maps?ie=UTF8&hq&q=%s,%s+(Point)&z=11" % (lat, lon))]
@@ -361,8 +367,8 @@ def FDXDecode(pdu):
 
         x xx xx: went from "8 38 2a" to "a 24 01" in long dumps.
 
-        It wraps after 3b, so for the byte fields only 6 of 8 bits (& 0x3b) are in use.
-        Still unknown if all 4 bits are in use in the nibble field.
+        It wraps after 3b, so for the byte fields only 6 of 8 bits (& 0x3b)
+        are in use. Still unknown if all 4 bits are in use in the nibble field.
 
         Why is this MSB left, when the 13 byte example is MSB right?
 
@@ -375,8 +381,8 @@ def FDXDecode(pdu):
 
         Flaps data alternates between nolock1 and nolock2 during startup.
 
-        If the GPS is not connected, the sequence counter keeps going up but everything
-        else is static:
+        If the GPS is not connected, the sequence counter keeps going up but
+        everything else is static:
         ('0x240723', 'gpstime', {'rawbody': '0013391f0cfd00c481', 'uints':
          '036 007 035 000 019 057 031 012 253 000 196'})
         """
@@ -398,9 +404,12 @@ def FDXDecode(pdu):
                 # Hello future readers. I don't care after I'm dead ;-)
                 assert year < 2150
                 assert year > 2000
-                ts = datetime(year=year, month=month, day=day, hour=hour, minute=minute, second=second)
+                ts = datetime(year=year, month=month, day=day, hour=hour,
+                              minute=minute, second=second)
+
             except AssertionError as e:
-                logging.debug("gpstime year is %s -- %s body: %s" % (year, str(e), strbody))
+                logging.debug("gpstime year is %s -- %s body: %s" %
+                              (year, str(e), strbody))
                 ts = float("NaN")
 
             keys = [("utctime", ts)]
@@ -410,6 +419,7 @@ def FDXDecode(pdu):
         mdesc = "dst200msg0"
         body = checklength(pdu, 7)
         keys = intdecoder(body)
+
     elif mtype == 0x2d0528:
         mdesc = "service0"
         body = checklength(pdu, 10)
@@ -436,7 +446,8 @@ def FDXDecode(pdu):
         body = checklength(pdu, 3)
         keys = intdecoder(body, width=8)
     else:
-        raise NotImplementedError("handler for 0x%06x mlen=%s: %s" % (mtype, mlen, pdu))
+        raise NotImplementedError("handler for 0x%06x mlen=%s: %s"
+                                  % (mtype, mlen, pdu))
 
     keys += [('strbody', strbody)]
     keys += [('mdesc', mdesc)]
