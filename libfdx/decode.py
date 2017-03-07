@@ -613,6 +613,19 @@ def FDXDecode(pdu):
         body = checklength(pdu, 8)
         keys = intdecoder(body)
 
+    elif mtype == 0x370136:
+        """37 01 36 - baker_kilo (n Hz)
+
+        Unknown 6 byte message from the Baker data set.
+
+        Always 000081.
+        """
+        mdesc = "baker_kilo"
+        if strbody == "000081":
+            pass
+        else:
+            raise FailedAssumptionError(mdesc, "got %s, expected %s"
+                                        % (middle, "000081"))
 
     elif mtype == 0x410a4b:
         """41 0a 4b - baker_indian (0.5 Hz)
