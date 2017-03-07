@@ -49,6 +49,11 @@ def fahr2celcius(temp):
     assert temp < 150
     return (temp - 32) * (5/9.)
 
+def feet2meter(feet):
+    assert type(feet) in [float, int]
+    assert feet >= 0
+    return feet * 0.3048
+
 def checklength(pdu, speclen):
     "pdu is hex encoded, 4 bits per char."
     assert type(pdu) == str
@@ -307,7 +312,7 @@ def FDXDecode(pdu):
         else:
             lat = Latitude(degree=body[0:8].uintle, minute=body[8:24].uintle * 0.001)
             lon = Longitude(degree=body[24:32].uintle, minute=body[32:48].uintle * 0.001)
-            keys += [("elevation", body[64:72].uintle)]  # in feet
+            keys += [("elevation", feet2meter(body[64:72].uintle))]
             keys += [("lat", lat), ("lon", lon)]
             #keys += [("gmapspos", "https://www.google.com/maps?ie=UTF8&hq&q=%s,%s+(Point)&z=11" % (lat, lon))]
 
