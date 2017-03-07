@@ -94,7 +94,7 @@ def main():
 
         output = fmter.handle(buf)
         if output:
-            print(output)
+            print(output, flush=True)
 
 if __name__ == "__main__":
     main()
