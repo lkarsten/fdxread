@@ -393,7 +393,27 @@ def FDXDecode(pdu):
 
 
     elif mtype == 0x200828:
+        """20 08 28" gpspos (13 bytes)
+
+        Pattern: "20 08 28 3b xx c3 0a yy yy e0 00 zz 81"
+
+        xx moves from db..ff in dataset. _does not_ change "3b" as would be expected from 12byte message pattern.
+        yy yy - counter. 00..ff left, 8e..8f seen on right.
+        zz - checksum?
+
+        There are messages starting with the same preamble, which most likely are transmission errors:
+        ```
+        $ cut -f2- snippet2 | grep "20 08 28 3" | cut -f1 | sort -n | uniq -c | sort -rn
+           5866 13
+             24 8
+             15 5
+              6 12
+        ```
+
+        If the GPS is not connected, the body is always: 0x00000000000010001081
+        """
         mdesc = "gpspos"
+
         if mlen < 13:
             return
         body = checklength(pdu, 13)
@@ -524,6 +544,56 @@ def FDXDecode(pdu):
             keys = [("utctime", ts)]
             keys += [("unknown", body[56:64].uintle)]
 
+
+    elif mtype == 0x250421:
+        """25 04 21 - baker_juliet (0.5 Hz)
+
+        Unknown 9 byte message from the Baker data set.
+
+        Pattern: xx yy zz 00 ZZ 81
+        Seen: ca0d0000c781
+
+        xx jumps from 9 to 185 in one update.
+        yy moves slowly, 14 down to 9.
+        zz is 0 or 1.
+        ZZ is like xx, jumps from 3 to 199.
+        """
+        mdesc = "baker_juliet"
+        body = checklength(pdu, 9)
+        keys = intdecoder(body)
+        assert strbody[6:8] == "00"
+        keys += [("xx", body[0:8].uintle),
+                 ("yy", body[8:16].uintle),
+                 ("zz", body[16:24].uintle),
+                 ("ZZ", body[-8:].uintle)]
+
+    elif mtype == 0x260127:
+        """26 01 27 - baker_hotel (0.5 Hz)
+
+        Unknown 6 byte message from the Baker data set.
+
+        Seen: c8c881
+        """
+        mdesc = "baker_hotel"
+        if strbody == "c8c881":
+            return
+        else:
+            raise FailedAssumptionError(mdesc, "got %s, expected %s"
+                                        % (strbody, "c8c881"))
+
+    elif mtype == 0x270225:
+        """27 02 25 - baker_golf (0.5 Hz)
+
+        Unknown 7 byte message from the Baker data set. Always 00ffff81.
+        """
+        mdesc = "baker_golf"
+        if strbody == "00ffff81":
+            return
+        else:
+            raise FailedAssumptionError(mdesc, "got %s, expected %s"
+                                        % (strbody, "00ffff81"))
+
+
     elif mtype == 0x2c022e:
         mdesc = "dst200msg0"
         body = checklength(pdu, 7)
@@ -542,6 +612,33 @@ def FDXDecode(pdu):
         mdesc = "windmsg8"
         body = checklength(pdu, 8)
         keys = intdecoder(body)
+
+
+    elif mtype == 0x410a4b:
+        """41 0a 4b - baker_indian (0.5 Hz)
+
+        Unknown 15 byte message from the Baker data set.
+
+        Pattern: xx00ffffffffffffffffyy81
+
+        xx and yy are equal, valued 120-138.
+        """
+        mdesc = "baker_indian"
+        body = checklength(pdu, 15)
+        keys = intdecoder(body)
+
+        middle = strbody[4:-4]
+        if middle != "ffffffffffffffff":
+            raise FailedAssumptionError(mdesc, "got %s, expected %s"
+                                        % (middle, middle))
+
+        xx = body[0:8].uintle
+        yy = body[-8:].uintle
+        keys += [("xx", xx)]
+
+        if xx != yy:
+            raise FailedAssumptionError(mdesc, "xx != yy (got %s, expect %s)"
+                                        % (xx, yy))
 
     elif mtype == 0x700373:
         mdesc = "windmsg3"
