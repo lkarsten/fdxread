@@ -28,6 +28,7 @@ from pprint import pprint
 from sys import argv, stderr
 from os.path import exists
 
+
 def dumpreader(inputfile, trim=False, seek=0):
     fp = open(inputfile)
     fp.seek(seek)

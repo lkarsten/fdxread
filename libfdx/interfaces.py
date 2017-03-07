@@ -73,19 +73,23 @@ class GND10interface(object):
                 try:
                     self.open()
                 except serial.serialutil.SerialException as e:
-                    if e.errno in [2, 16] or "[Errno 6] Device not configured" in e.message:
+                    if e.errno in [2, 16] or \
+                            "[Errno 6] Device not configured" in e.message:
                         logging.warning(e.strerror)
                         self.close()
                         if self.last_yield < (time() + self.read_timeout):
                             now = time()
-                            if self.last_yield > (now - 0.05):  # Pace the iterator if nothing is working.
+                            # Pace the iterator if nothing is working.
+                            if self.last_yield > (now - 0.05):
                                 sleep(0.05)
                             self.last_yield = now
                             yield None
-                        sleep(self.reset_sleep)   # Retry opening the port in a while
+                        # Retry opening the port in a while
+                        sleep(self.reset_sleep)
                         continue
                     else:
-                        logging.error("errno: %s message: %s all: %s" % (e.errno, e.message, str(e)))
+                        logging.error("errno: %s message: %s all: %s" %
+                                      (e.errno, e.message, str(e)))
                         raise
 
                 # After successful open, send the mode change if asked to.
@@ -93,18 +97,22 @@ class GND10interface(object):
                     try:
                         self.stream.write("$PSILFDX,,R\n".encode("ascii"))
                     except serial.serialutil.SerialException as e:
-                        logging.error("errno: %s message: %s all: %s" % (e.errno, e.message, str(e)))
+                        logging.error("errno: %s message: %s all: %s" %
+                                      (e.errno, e.message, str(e)))
                         self.close()
 
             try:
-                chunk = self.stream.read(1)  # Inefficient but easily understood.
+                # Inefficient but easily understood.
+                chunk = self.stream.read(1)
             except serial.serialutil.SerialException as e:
-                if e.errno in [2, 16] or "[Errno 6] Device not configured" in e.message:
+                if e.errno in [2, 16] or \
+                        "[Errno 6] Device not configured" in e.message:
                     self.close()
                     # No sleep, the one in the port open loop will be used.
                     continue
                 else:
-                    logging.error("errno: %s message: %s all: %s" % (e.errno, e.message, str(e)))
+                    logging.error("errno: %s message: %s all: %s" %
+                                  (e.errno, e.message, str(e)))
                     raise
 
             assert chunk is not None
@@ -121,13 +129,14 @@ class GND10interface(object):
 
             assert len(chunk) > 0
             buf.append(chunk)
-            #print len(chunk), self.n_msg, self.n_errors
+            # print len(chunk), self.n_msg, self.n_errors
 
             if 0x81 in buf:
-                #print "trying to decode %i bytes" % len(buf)
+                # print "trying to decode %i bytes" % len(buf)
                 try:
                     fdxmsg = FDXDecode(hexlify(buf))
-                except (DataError, FailedAssumptionError, NotImplementedError) as e:
+                except (DataError, FailedAssumptionError,
+                        NotImplementedError) as e:
                     # This class concerns itself with the readable only.
                     logging.warning("Ignoring exception: %s" % str(e))
                     self.n_errors += 1
@@ -167,10 +176,11 @@ class HEXinterface(object):
 
         for ts, mlen, frame in reader:
             assert len(frame) > 0
-            #print "trying to decode %i bytes: %s" % (len(frame), frame)
+            # print "trying to decode %i bytes: %s" % (len(frame), frame)
             try:
                 fdxmsg = FDXDecode(frame)
-            except (DataError, FailedAssumptionError, NotImplementedError) as e:
+            except (DataError, FailedAssumptionError,
+                    NotImplementedError) as e:
                 logging.warning("Ignoring exception: %s" % str(e))
                 self.n_errors += 1
             else:
@@ -184,7 +194,6 @@ class HEXinterface(object):
                     if self.frequency is not None:
                         sleep(1.0/self.frequency)
 
-        #print >>stderr, "File replay completed. n_msg: %s n_errors: %s" % (self.n_msg, self.n_errors)
 
 if __name__ == "__main__":
     unittest.main()

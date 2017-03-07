@@ -33,6 +33,7 @@ from os.path import exists
 
 from bitstring import BitArray
 
+
 def hexd(data):
     """
     >>> hexd(BitArray(hex="0x1ff"))
@@ -44,6 +45,7 @@ def hexd(data):
         s += ["%s%s" % (data[i:i+4].hex, data[i+4:i+8].hex)]
     return " ".join(s)
 
+
 def nxbdump(inputfile):
     with open(inputfile, "r") as fp:
         stream = BitArray(fp)
@@ -52,7 +54,7 @@ def nxbdump(inputfile):
             if not idx:
                 break
             pdu = stream[:idx[0]+8]
-            #print "pdu is: ", hexd(pdu)
+            # print "pdu is: ", hexd(pdu)
             stream = stream[idx[0]+8:]
             yield (0.0, len(pdu) // 8, hexd(pdu))
 

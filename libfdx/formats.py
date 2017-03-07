@@ -32,10 +32,12 @@ from sys import argv, stdin, stdout, stderr
 
 from LatLon23 import LatLon, Latitude, Longitude
 
+
 def fahr2kelvin(temp):
     assert type(temp) in [float, int]
     assert temp < 150
     return (temp + 459.67) * (5/9.)
+
 
 def knots2m(knots):
     """knots => m/s
@@ -44,7 +46,6 @@ def knots2m(knots):
     5.144444444444445
     """
     return knots * (1852.0/3600)
-
 
 
 class format_signalk_delta(object):
@@ -62,12 +63,11 @@ class format_signalk_delta(object):
             r += [('environment.depth.belowTransducer', s["depth"])]
         elif s["mdesc"] == "environment":
             r += [('environment.outside.pressure', s["airpressure"]),
-                  ('environment.outside_temperature', fahr2kelvin(s["temp_f"])),
-                 ]
+                  ('environment.outside_temperature',
+                   fahr2kelvin(s["temp_f"]))]
         elif s["mdesc"] == "gpspos":
             r += [("navigation.position.latitude", s["lat"]),
-                  ("navigation.position.longitude", s["lon"]),
-                 ]
+                  ("navigation.position.longitude", s["lon"])]
         elif s["mdesc"] == "gpscog":
             r += [('navigation.courseOverGroundTrue', radians(s["cog"])),
                   ('navigation.speedOverGroundTrue', knots2m(s["sog"]))]
@@ -76,6 +76,7 @@ class format_signalk_delta(object):
                 r += [("navigation.datetime.value", s["utctime"].isoformat())]
 
         return dict(r)
+
 
 # Original from https://stackoverflow.com/questions/11875770/
 def json_serial(obj):
@@ -126,14 +127,16 @@ class TestFormatters(unittest.TestCase):
 
     def test_sk(self):
         formatter = format_signalk_delta()
-        r = formatter.handle({"mdesc": "gpspos", "lat": 54.102466, "lon": 10.8079})
+        r = formatter.handle({"mdesc": "gpspos",
+                              "lat": 54.102466, "lon": 10.8079})
         self.assertAlmostEqual(r['navigation.position.longitude'], 10.8079)
 
-        r = formatter.handle({"utctime": self.un_isotime("2017-01-12T19:16:55"), "mdesc": "gpstime"})
+        r = formatter.handle({"utctime": self.un_isotime("2017-01-12T19:16:55"),
+                              "mdesc": "gpstime"})
         assert r == {'navigation.datetime.value': '2017-01-12T19:16:55'}
 
         if 0:
-            r = formatter.handle({"mdesc": "gpscog", "sog": 0.16, "cog": 344.47058823529414})
+            r = formatter.handle({"mdesc": "gpscog", "sog": 0.16, "cog": 344.47})
             pprint(r)
 
     def test_json(self):

@@ -86,13 +86,12 @@ class format_NMEA0183(object):
         elif sample["mdesc"] == "gpstime":
             if isinstance(sample["utctime"], str):  # For the test cases.
                 sample["utctime"] = datetime.strptime(sample["utctime"],
-                                                 "%Y-%m-%dT%H:%M:%S")
+                                                      "%Y-%m-%dT%H:%M:%S")
             # Will be used later on.
             if isinstance(sample["utctime"], datetime):
                 self.gpstime = sample["utctime"]
 
             assert self.gpstime is None or isinstance(self.gpstime, datetime)
-
 
         elif sample["mdesc"] == "gpspos":
             lat = sample["lat"]
@@ -181,12 +180,15 @@ class format_NMEA0183(object):
 class TestNMEA0183(unittest.TestCase):
     def test_gps(self):
         formatter = format_NMEA0183(joinlines=False)
-        r = formatter.handle({"mdesc": "gpspos", "lat": 54.10246, "lon": 10.8079})
+        r = formatter.handle({"mdesc": "gpspos",
+                              "lat": 54.10246, "lon": 10.8079})
         assert r is None   # Should be empty.
-        r = formatter.handle({"utctime": "2017-01-12T19:16:55", "mdesc": "gpstime"})
+        r = formatter.handle({"utctime": "2017-01-12T19:16:55",
+                              "mdesc": "gpstime"})
         assert r is None   # Should be empty also.
 
-        r = formatter.handle({"mdesc": "gpscog", "sog": 0.16, "cog": 344.47058823529414})
+        r = formatter.handle({"mdesc": "gpscog", "sog": 0.16,
+                              "cog": 344.47058823529414})
         assert len(r) == 2
 
         assert r[0] == '$GPRMC,191655,A,5406.15,N,1048.47,E,0.16,344.47,120117,0.0,E*47'

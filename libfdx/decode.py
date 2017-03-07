@@ -38,21 +38,26 @@ from bitstring import BitArray
 from .dumpreader import dumpreader
 from .nxbdump import nxbdump
 
+
 class DataError(Exception):
     pass
 
+
 class FailedAssumptionError(Exception):
     pass
+
 
 def fahr2celcius(temp):
     assert type(temp) in [float, int]
     assert temp < 150
     return (temp - 32) * (5/9.)
 
+
 def feet2meter(feet):
     assert type(feet) in [float, int]
     assert feet >= 0
     return feet * 0.3048
+
 
 def checklength(pdu, speclen):
     "pdu is hex encoded, 4 bits per char."
@@ -131,7 +136,6 @@ def FDXDecode(pdu):
     elif mtype == 0x010405:
         mdesc = "gnd10msg3"
         body = checklength(pdu, 9)
-        #keys = intdecoder(body, width=16)
         keys = []
 
         windspeed = body[0:16].uintle
@@ -187,7 +191,7 @@ def FDXDecode(pdu):
 
         if (len(pdu) / 2 == 6):  # Two data bytes, seen in Baker dataset.
             if strbody in ["000081", "020281"]:
-                return # Nothing to report if always the same.
+                return  # Nothing to report if always the same.
 
         body = checklength(pdu, None)
         keys = intdecoder(body)
@@ -198,15 +202,13 @@ def FDXDecode(pdu):
             return
         body = checklength(pdu, 8)
         keys = intdecoder(body, width=16)
-        # depth is confirmed identical to onboard display (5.3m.) needs
-        # verification on deeper waters.
         depth = body[0:16].uintle
         if depth == 2**16-1:
             depth = float("NaN")
 
         keys += [('depth', depth * 0.01)]
         keys += [('stw', body[16:24].uintle)]  # maybe
-        keys += [('unknown2', body[24:32].uintle)] # quality?
+        keys += [('unknown2', body[24:32].uintle)]  # quality?
 
     elif mtype == 0x080109:
         mdesc = "static1s"  # ex windmsg0, stalemsg0
@@ -225,7 +227,7 @@ def FDXDecode(pdu):
         yy = body[8:16].uintle
         if xx != yy:
             raise FailedAssumptionError(mdesc, "xx != yy (got %s, expect %s)"
-                                                % (xx, yy))
+                                        % (xx, yy))
         keys = [('xx', xx)]
 
     elif mtype == 0x110213:
@@ -472,7 +474,7 @@ class FDXDecodeTest(unittest.TestCase):
         assert isnan(r["lat"])
         assert isnan(r["lon"])
 
-        r = FDXDecode("20 08 28 3b 21 c3 0a ff 8e e0 00 42 81")  # Some position
+        r = FDXDecode("20 08 28 3b 21 c3 0a ff 8e e0 00 42 81")  # Position
         self.assertEqual(r["mdesc"], "gpspos")
         assert isinstance(r["lat"], Latitude)
         assert isinstance(r["lon"], Longitude)
