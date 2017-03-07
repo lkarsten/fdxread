@@ -88,6 +88,10 @@ def intdecoder(body, width=8, signed=False):
         s += [fmt % (value.intle if signed else value.uintle)]
     return [("ints", " ".join(s)), ('strbody', body.hex)]
 
+def disect(pdu):
+    body = checklength(pdu, None)
+    return intdecoder(body)
+
 
 def FDXDecode(pdu):
     assert type(pdu) == str
