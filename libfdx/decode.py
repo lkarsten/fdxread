@@ -272,6 +272,22 @@ def FDXDecode(pdu):
                                         % (xx, yy))
         keys = [('xx', xx)]
 
+
+    elif mtype == 0x0a040e:
+        """0a 04 0e - baker_echo (0.5 Hz)
+
+        Unknown 9 byte message from the Baker data set.
+
+        Always 00003e023c81.
+        """
+        mdesc = "baker_echo"
+        if strbody == "00003e023c81":
+            return
+        else:
+            raise FailedAssumptionError(mdesc, "got %s, expected %s"
+                                        % (strbody, "00003e023c81"))
+
+
     elif mtype == 0x0f040b:
         """0f 04 0b - baker_charlie (1 Hz)
 
@@ -280,10 +296,11 @@ def FDXDecode(pdu):
         Always 0f 04 0b 66 53 a6 04 97 81.
         """
         mdesc = "baker_charlie"
-        if strbody != "6653a6049781":
+        if strbody == "6653a6049781":
+            return
+        else:
             raise FailedAssumptionError(mdesc, "got %s, expected %s"
                                         % (strbody, "6653a6049781"))
-        return
 
 
     elif mtype == 0x110213:
@@ -355,6 +372,22 @@ def FDXDecode(pdu):
 
 #        yy = body[16:32].uintle
 #        keys = [('xx', xx), ('yy', yy)]
+
+    elif mtype == 0x1f051a:
+        """1f 05 1a - baker_foxtrot (1 Hz)
+
+        Unknown 10 byte frame type seen in the Baker data file.
+
+        Always 0000ffff000081.
+        """
+        mdesc = "baker_foxtrot"
+        if strbody == "0000ffff000081":
+            return
+        else:
+            raise FailedAssumptionError(mdesc, "got %s, expected %s"
+                                        % (strbody, "0000ffff000081"))
+
+
     elif mtype == 0x200828:
         mdesc = "gpspos"
         if mlen < 13:
@@ -406,6 +439,20 @@ def FDXDecode(pdu):
 
         keys = [('cog', cog), ('sog', sog),
                 ('unknown', body[32:].uintle)]
+
+
+    elif mtype == 0x220725:
+        """22 07 25 - baker_delta (1 Hz)
+
+        Unknown message from the Baker data set.
+        Always 220725ffffffffffffffff81.
+        """
+        mdesc = "baker_delta"
+        if strbody == "ffffffffffffffff81":
+            return
+        else:
+            raise FailedAssumptionError(mdesc, "got %s, expected %s"
+                                        % (strbody, "ffffffffffffffff81"))
 
     elif mtype == 0x230526:
         mdesc = "static2s"
