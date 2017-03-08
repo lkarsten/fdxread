@@ -2,8 +2,9 @@
 include LICENSE
 include README.md
 
-include fdxread.py
+include fdxread
 
+include requirements.txt
 include fdxprotocol.rst
 include dumps/onsdagsregatta-2016-08-24.dump
 

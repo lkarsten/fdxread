@@ -26,8 +26,8 @@ Running it
 ----------
 
 ```
-    $ ./fdxread.py -h
-    usage: fdxread.py [-h] [--format fmt] [--seek n] [--pace n] [-v] inputfile
+    $ ./fdxread -h
+    usage: fdxread [-h] [--format fmt] [--seek n] [--pace n] [-v] inputfile
 
     fdxread - Nexus FDX parser (incl. Garmin GND10)
 
@@ -48,7 +48,7 @@ Running it
 
 ```
 	(inside a populated virtualenv, as described above)
-	./fdxread.py /dev/ttyACM0
+	./fdxread /dev/ttyACM0
 ```
 
 This will read FDX from `/dev/ttyACM0`, and output NMEA0183 to stdout.
