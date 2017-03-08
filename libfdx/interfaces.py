@@ -122,7 +122,7 @@ class GND10interface(object):
             buf += chunk
 
             if 0x81 in buf:
-                # print "trying to decode %i bytes" % len(buf)
+                # print("trying to decode %i bytes: %s" % (len(buf), buf.hex()))
                 try:
                     fdxmsg = FDXDecode(buf)
                 except (DataError, FailedAssumptionError,
