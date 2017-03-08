@@ -63,8 +63,11 @@ class GND10interface(object):
 
     def close(self):
         if self.stream is not None:
-            self.stream.close()
-            del self.stream
+            try:
+                self.stream.close()
+                del self.stream
+            except serial.serialutil.SerialException as e:
+                pass
         self.stream = None
 
     def recvmsg(self):
