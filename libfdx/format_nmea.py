@@ -152,7 +152,8 @@ class format_NMEA0183(object):
                                        "windsignal", "dst200depth2",
                                        "gnd10msg2", "windmsg3", "wind40s",
                                        "dst200msg0", "service0", "windmsg7",
-                                       "windmsg8", "windstale", "bootup0"]:
+                                       "windmsg8", "windstale", "bootup0",
+                                       "dst200temp" ]:
                 logging.warning("Unhandled: '%s'" % pformat(sample))
             else:
                 # Ignore known no-ops.
