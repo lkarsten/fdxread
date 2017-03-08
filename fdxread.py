@@ -29,7 +29,7 @@ import unittest
 from datetime import datetime
 from os.path import isfile, exists
 from pprint import pprint
-from sys import argv
+from sys import argv, stdout
 
 from libfdx import *
 
@@ -94,7 +94,8 @@ def main():
 
         output = fmter.handle(buf)
         if output:
-            print(output, flush=True)
+            print(output)
+            stdout.flush()
 
 if __name__ == "__main__":
     main()

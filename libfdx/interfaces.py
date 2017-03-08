@@ -121,7 +121,7 @@ class GND10interface(object):
             assert len(chunk) > 0
             buf += chunk
 
-            if 0x81 in buf:
+            if b'\x81' in buf:
                 # print("trying to decode %i bytes: %s" % (len(buf), buf.hex()))
                 try:
                     fdxmsg = FDXDecode(buf)
