@@ -22,6 +22,7 @@ import doctest
 import logging
 import unittest
 
+from binascii import hexlify
 from datetime import datetime
 from pprint import pprint
 from time import time, sleep
@@ -54,6 +55,8 @@ class GND10interface(object):
             self.stream.close()
 
     def open(self):
+        logging.debug("Opening serial port %s (read_timeout=%s)" % (self.serialport,
+                      self.read_timeout))
         self.stream = serial.Serial(port=self.serialport,
                                     timeout=self.read_timeout)
         assert self.stream is not None
@@ -65,7 +68,7 @@ class GND10interface(object):
         self.stream = None
 
     def recvmsg(self):
-        buf = bytearray()
+        buf = bytes()
         empty_reads = 0
 
         while True:
@@ -105,18 +108,10 @@ class GND10interface(object):
                 # Inefficient but easily understood.
                 chunk = self.stream.read(1)
             except serial.serialutil.SerialException as e:
-                if e.errno in [2, 16] or \
-                        "[Errno 6] Device not configured" in e.message:
-                    self.close()
-                    # No sleep, the one in the port open loop will be used.
-                    continue
-                else:
-                    logging.error("errno: %s message: %s all: %s" %
-                                  (e.errno, e.message, str(e)))
-                    raise
+                self.close()
+                continue
 
-            assert chunk is not None
-
+            assert chunk is None or isinstance(chunk, bytes)
             if len(chunk) == 0:
                 empty_reads += 1
                 logging.info("serial read timeout after %.3f seconds" %
@@ -128,13 +123,12 @@ class GND10interface(object):
             self.empty_reads = 0
 
             assert len(chunk) > 0
-            buf.append(chunk)
-            # print len(chunk), self.n_msg, self.n_errors
+            buf += chunk
 
             if 0x81 in buf:
                 # print "trying to decode %i bytes" % len(buf)
                 try:
-                    fdxmsg = FDXDecode(hexlify(buf))
+                    fdxmsg = FDXDecode(buf)
                 except (DataError, FailedAssumptionError,
                         NotImplementedError) as e:
                     # This class concerns itself with the readable only.
@@ -147,7 +141,7 @@ class GND10interface(object):
                         assert isinstance(fdxmsg, dict)
                         yield fdxmsg
 
-                buf = bytearray()
+                buf = bytes()
 
 
 class HEXinterface(object):

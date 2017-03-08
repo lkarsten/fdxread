@@ -94,7 +94,11 @@ def disect(pdu):
 
 
 def FDXDecode(pdu):
-    assert type(pdu) == str
+    # For now.
+    if isinstance(pdu, bytes):
+        pdu = pdu.hex()
+
+    assert isinstance(pdu, str)
 
     if " " in pdu:
         pdu = pdu.replace(" ", "")
