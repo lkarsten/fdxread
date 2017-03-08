@@ -79,32 +79,25 @@ class GND10interface(object):
                 try:
                     self.open()
                 except serial.serialutil.SerialException as e:
-                    if e.errno in [2, 16] or \
-                            "[Errno 6] Device not configured" in e.message:
-                        logging.warning(e.strerror)
-                        self.close()
-                        if self.last_yield < (time() + self.read_timeout):
-                            now = time()
-                            # Pace the iterator if nothing is working.
-                            if self.last_yield > (now - 0.05):
-                                sleep(0.05)
-                            self.last_yield = now
-                            yield None
-                        # Retry opening the port in a while
-                        sleep(self.reset_sleep)
-                        continue
-                    else:
-                        logging.error("errno: %s message: %s all: %s" %
-                                      (e.errno, e.message, str(e)))
-                        raise
+                    self.close()
+                    now = time()
+                    if (self.last_yield or now) < (now + self.read_timeout):
+                        # Pace the iterator if nothing is working.
+                        if self.last_yield > (now - 0.05):
+                            sleep(0.05)
+                        self.last_yield = now
+                        yield None
+
+                    # Retry opening the port in a while
+                    sleep(self.reset_sleep)
+                    continue
 
                 # After successful open, send the mode change if asked to.
                 if self.send_modechange:
                     try:
                         self.stream.write("$PSILFDX,,R\n".encode("ascii"))
                     except serial.serialutil.SerialException as e:
-                        logging.error("errno: %s message: %s all: %s" %
-                                      (e.errno, e.message, str(e)))
+                        logging.error(str(e))
                         self.close()
 
             try:
