@@ -40,7 +40,7 @@ def main():
 
     parser.add_argument("input", help="Serial port or file to read from.\nExamples: /dev/ttyACM0, COM3, ./file.dump",
                         metavar="inputfile")
-    parser.add_argument("--format", help="Output mode, default nmea0183. (json, signalk, nmea0183, raw)",
+    parser.add_argument("--format", help="Output mode, default nmea0183. (json, signalk, nmea0183, none, raw)",
                         default="nmea0183", metavar="fmt")
     parser.add_argument("--seek", help="Seek this many bytes into file before starting (for files)",
                         metavar="n", default=0, type=int)
@@ -70,6 +70,8 @@ def main():
         fmter = format_json(devmode=True)
     elif args.format == "signalk":
         fmter = format_signalk_delta()
+    elif args.format == "none":
+        fmter = None
     else:
         parser.print_help()
         exit()
@@ -92,10 +94,11 @@ def main():
             continue
         assert type(buf) == dict
 
-        output = fmter.handle(buf)
-        if output:
-            print(output)
-            stdout.flush()
+        if fmter:
+            output = fmter.handle(buf)
+            if output:
+                print(output)
+                stdout.flush()
 
 if __name__ == "__main__":
     main()
