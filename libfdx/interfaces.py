@@ -95,7 +95,7 @@ class GND10interface(object):
                 # After successful open, send the mode change if asked to.
                 if self.send_modechange:
                     try:
-                        self.stream.write("$PSILFDX,,R\n".encode("ascii"))
+                        self.stream.write("$PSILFDX,,R\r\n".encode("ascii"))
                     except serial.serialutil.SerialException as e:
                         logging.error(str(e))
                         self.close()
