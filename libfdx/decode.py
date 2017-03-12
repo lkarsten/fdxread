@@ -36,8 +36,6 @@ from time import sleep, time
 from LatLon23 import LatLon, Latitude, Longitude
 from bitstring import BitArray
 
-from .dumpreader import readable
-
 
 class DataError(Exception):
     pass
