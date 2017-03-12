@@ -56,7 +56,7 @@ class format_signalk_delta(object):
     def handle(self, s):
         assert type(s) == dict
         r = []
-        if s["mdesc"] == "gnd10msg3":
+        if s["mdesc"] == "wsi0":
             r += [('environment.wind.angleApparent', radians(s["awa"]))]
             r += [('environment.wind.speedApparent', knots2m(s["aws_lo"]))]
         elif s["mdesc"] == "dst200depth":

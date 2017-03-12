@@ -123,7 +123,7 @@ class format_NMEA0183(object):
                                "%.2f" % sample["cog"],
                                "T"))
 
-        elif sample["mdesc"] == "gnd10msg3":
+        elif sample["mdesc"] == "wsi0":
             #  $--MWV,x.x,a,x.x,a*hh<CR><LF>
             result += [("$FVMWV",
                         "%.2f" % sample["awa"],
