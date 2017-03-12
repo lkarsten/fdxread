@@ -61,29 +61,6 @@ TODO: Need a absolute-timestamped lengthy dump with state transitions to continu
 it originates, except that it is not from the GPS.
 
 
-"01 04 05" group (9B): desc: gnd10msg3
----------------------------------------
-
-Present even if missing wind+dst200.
-
-3Hz update rate.
-
-Always 0xffff00000081 if only gnd10, no wind or dst200 connected.
-Adding GPS does not change it either.
-
-Subject for desc rename.
-
-When the wind box has crashed, this message looks like this:
-1471708684.11 ('0x010405', 'gnd10msg3', {'AWA?': '0.000', 'windspeed?': 'nan', 'ints': '255 255 000 000 000', 'rawbody': 'ffff00000081'})
-
-Neither first or second 16bits seem to be influenced by boat speed.
-
-Second 16bit word looks to be related to true or apparent wind angle. When going against the wind,
-it is up around 64000. When reaching, around 40000.
-
-Doing turns and watching the AWA? counter, it does seem to follow the "TWA" on the left display (which is awa, because no stw right now). I think it is the right bitfield, but the scaling is wrong. Revisit.
-
-
 "03 01 02" (6 Bytes) - desc: emptymsg1
 --------------------------------------
 

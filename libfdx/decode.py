@@ -146,9 +146,16 @@ def FDXDecode(pdu):
         keys = intdecoder(body, width=16)
 
     elif mtype == 0x010405:
+        """01 04 05 - gnd10msg3 (9 bytes, 3 Hz)
+
+        If only GND10 (no wind or dst200), always 0xffff00000081.
+        When the wind box has crashed/browned out, the body is: ffff00000081
+
+        Doing turns and watching the AWA? counter, it does seem to follow reported AWA,
+        I think it is the right bitfield, but the scaling is wrong. Revisit.
+        """
         mdesc = "gnd10msg3"
         body = checklength(pdu, 9)
-        keys = []
 
         windspeed = body[0:16].uintle
         if windspeed == 2**16-1:
