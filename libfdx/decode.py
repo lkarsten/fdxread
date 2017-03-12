@@ -175,26 +175,47 @@ def FDXDecode(pdu):
           56 '1016000681'})
           25 'a90100a881'})
          350 'ffff000081'})
+
         Very wide set of values seen with DST200 connected. Origin most
         likely DST200.
+
+        In no-dst200-attached dumps: "02 03 01" + "6b yy nn 6a 81", nn is
+        always zero, and yy is usually 0x00, 0x01 or 0x02.
+
+        Is there a field that defines mode in here? They come in chunks
+        of 
+        169 001 000 168
+        016 021 000 005
+        016 021 000 005 (again)
+        010 000 000 010
+        016 021 000 005 (repeats)
+
+        In the short form, the two first octets are clearly related:
+        {"ints": "246 155", "strbody": "f69b81", "xx": 246, "mode": 155, "zero": 0, "yy": 0, "rest": 0, "mdesc": "dst200temp"}
+        {"ints": "249 155", "strbody": "f99b81", "xx": 249, "mode": 155, "zero": 0, "yy": 0, "rest": 0, "mdesc": "dst200temp"}
+        {"ints": "253 155", "strbody": "fd9b81", "xx": 253, "mode": 155, "zero": 0, "yy": 0, "rest": 0, "mdesc": "dst200temp"}
+        {"ints": "000 156", "strbody": "009c81", "xx": 0, "mode": 156, "zero": 0, "yy": 0, "rest": 0, "mdesc": "dst200temp"}
+        {"cog": 245.64705882352942, "sog": 0.02, "unknown": 39, "strbody": "02008bae2781", "mdesc": "gpscog"}
+        {"ints": "001 156", "strbody": "019c81", "xx": 1, "mode": 156, "zero": 0, "yy": 0, "rest": 0, "mdesc": "dst200temp"}
+        {"ints": "001 156", "strbody": "019c81", "xx": 1, "mode": 156, "zero": 0, "yy": 0, "rest": 0, "mdesc": "dst200temp"}
+
+        (increasing from 254 155 onto 000 156 and proceeding upwards.)
         """
         mdesc = "dst200temp"
 
         if strbody in ['ffff000081', '0000000081']:
             return
-        body = checklength(pdu, 8)
 
-        # This is not depth, it jumps around too much.
-        depth = body[0:16].uintle
-        if depth == 2**16-1:
-            depth = float("NaN")
-        keys = [('not_depth', depth * 0.01)]
+        # print(len(pdu))
+        body = checklength(pdu, None)
+        keys = intdecoder(body, width=16)
 
-        #stw = body[16:32].uintle
-        #if stw == 2**16-1:
-        #    stw = float("NaN")
-        #keys = [('stw?', "%.2f" % (stw * 0.001))]
-        keys += intdecoder(body[16:], width=16)
+        if len(strbody) == 6:   # Baker short form
+            keys += [('internal_temperature', body[0:16].uintle * 0.001), ]
+            keys += [('inttempC', fahr2celcius(body[0:16].uintle * 0.001)), ]
+        elif len(strbody) == 10:   # long form
+            keys += [('xx', body[0:16].uintle), ]
+            keys += [('yy', body[16:32].uintle), ]
 
     elif mtype == 0x030102:
         mdesc = "emptymsg3"
