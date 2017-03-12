@@ -173,7 +173,7 @@ class format_NMEA0183(object):
             completed.append("%s*%02X" % (sentence, cksum))
 
         if completed and self.joinlines:
-            completed = "\n".join(completed)
+            completed = "\r\n".join(completed)
 
         return completed or None
 
