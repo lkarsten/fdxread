@@ -153,6 +153,10 @@ def FDXDecode(pdu):
 
         Doing turns and watching the AWA? counter, it does seem to follow reported AWA,
         I think it is the right bitfield, but the scaling is wrong. Revisit.
+
+        6 or 8 byte versions of this message exists. These are ignored because they are not
+        very common (26 out of ~3400 in baker set), and the blah.has_key() logic is infectiuous
+        to the client code. A wsi0 message should always have three attributes.
         """
         mdesc = "wsi0"
         body = checklength(pdu, 9)
@@ -373,18 +377,11 @@ def FDXDecode(pdu):
         keys += [("maybe", body[0:16].uintle)]
 
     elif mtype == 0x150411:
-        """15 04 11 - gnd10msg2 (6, 8 or 9 bytes) (2 Hz)
-
-        9 byte messages is the normal on my GND10 feed.
-        8 byte messages are 1 in 20 in the Baker set, and 6 byte is 1 in 100.
-
-        Looks like whatever is sending this, can choose to send 6, 8 or 9 byte messages?
+        """15 04 11 - gnd10msg2 (9 bytes, 2 Hz)
 
         In the Baker set, the values seen on 6 and 8 byte fit the sequence before
         and after, so most likely it is the same data being sent only with the
-        last data missing.
-
-        Cutoff after 16+16+8 supports size estimates.
+        last data missing. Cutoff after 16+16+8 supports size estimates.
 
         On GND10: Does not seem course-related, or boat-speed related. First 16bits alwaays around 58000, second
         is 0xffff. Last 8 also unknown. Jumps around a lot.
@@ -392,16 +389,11 @@ def FDXDecode(pdu):
         In Baker set, second word is not 0xffff.
         """
         mdesc = "gnd10msg2"
-        body = checklength(pdu, None)
-        if mlen == 9:
-            keys += [("uint8", body[32:40].uintle)]
-        if mlen >= 8:
-            keys += [("u2", body[16:32].uintle)]
-        if mlen >= 6:
-            keys += [("u1", body[0:16].uintle)]
-        else:
-            raise FailedAssumptionError(mdesc, "mlen is %i, not 6, 8 or 9: %s" % (mlen, pdu))
-        keys += intdecoder(body, width=16)
+        body = checklength(pdu, 9)
+
+        keys += [("u1", body[0:16].uintle)]
+        keys += [("u2", body[16:32].uintle)]
+        keys += [("uint8", body[32:40].uintle)]
 
     elif mtype == 0x170512:
         mdesc = "static2s_two"
