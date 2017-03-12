@@ -199,59 +199,6 @@ is 0xffff. Last 8 also unknown. Jumps around a lot.
 1471711732.06 ('0x150411', 'gnd10msg2', {'rawbody': '7ce3ffff9f81', 'ints': '058236 065535 000159'})
 
 
-
-"1a 04 1e" (9 bytes) name: environment
---------------------------------------
-
-Previously: windmsg6, airpressure
-
-The "1a 04 1e" message often arrives in a continuous chunk with the same other messages:
-```
-0.029750        10      23 05 26 ff ff 00 00 80 80 81
-0.000000        9       01 04 05 95 01 0d 82 1b 81
-0.000000        7       11 02 13 00 00 00 81
-0.000000        9       12 04 16 94 01 1d 82 0a 81
-0.000000        9       1a 04 1e 9c 27 ff 00 44 81
-0.000000        12      24 07 23 08 39 33 1b 07 18 00 06 81
-0.000000        9       15 04 11 24 e1 ff ff c5 81
-```
-Note that "15 04 11" appears as well.
-
-Pattern:
-1a 04 1e xx 27 ff yy zz 81".
-xx: values 7a..85 seen.
-yy: values 00, 7f and 40 seen. (only)
-zz: checksom? no clear pattern. values a2 up to df, non-continuous.
-
-Updated every 2 seconds. (0.5Hz)
-
-Present with DST200 disconnected. Not present in GND10+GPS dataset.
-
-::
-     921 ('0x1a041e', 'windmsg6', {'yy': 255, 'rawbody': '9827ff004081', 'xx': 10136, 'zz': 16384})
-    1172 ('0x1a041e', 'windmsg6', {'yy': 255, 'rawbody': '9927ff004181', 'xx': 10137, 'zz': 16640})
-     853 ('0x1a041e', 'windmsg6', {'yy': 255, 'rawbody': '9a27ff004281', 'xx': 10138, 'zz': 16896})
-     561 ('0x1a041e', 'windmsg6', {'yy': 255, 'rawbody': '9b27ff004381', 'xx': 10139, 'zz': 17152})
-     145 ('0x1a041e', 'windmsg6', {'yy': 255, 'rawbody': '9c27ff004481', 'xx': 10140, 'zz': 17408})
-     523 ('0x1a041e', 'windmsg6', {'yy': 255, 'rawbody': '9d27ff004581', 'xx': 10141, 'zz': 17664})
-     706 ('0x1a041e', 'windmsg6', {'yy': 255, 'rawbody': '9e27ff004681', 'xx': 10142, 'zz': 17920})
-      22 ('0x1a041e', 'windmsg6', {'yy': 255, 'rawbody': 'ffffff40bf81', 'xx': 65535, 'zz': 48960})
-
-
-Most likely source is wind instrument.
-
-Example body: "df27ff000781"
-Pattern seem to be: "xxxx yy zzZZ 81".
-
-Does not vary a whole lot, yy is often 0xff.
-
-xx is most likely air pressure in pascals.
-zz is a flag of sorts. 0x00, 0x40 and x07f seen.
-ZZ seem to may be temperature in fahrenheit, when flag is 0x00.
-
-Needs further study.
-
-
 "1c 03 1f" (8 bytes) name: wind40s
 -----------------------------------
 

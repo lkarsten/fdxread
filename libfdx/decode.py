@@ -404,13 +404,42 @@ def FDXDecode(pdu):
             return   # no use in logging it. static.
 
     elif mtype == 0x1a041e:
+        """1a 04 1e - environment (9 bytes, 2 Hz)
+        Previously: windmsg6, airpressure
+
+        Present with DST200 disconnected. Not present in GND10+GPS dataset. Likely source is wind instrument.
+
+        This message often arrives in a continuous chunk with the same other messages:
+        ```
+        0.029750        10      230526 ffff 0000 8080 81
+        0.000000        9       010405 9501 0d82 1b 81
+        0.000000        7       110213 0000 0081
+        0.000000        9       120416 9401 1d82 0a 81
+        0.000000        9       1a041e 9c27 ff00 44 81
+        0.000000        12      240723 0839 331b 0718 0006 81
+        0.000000        9       150411 24e1 ffff c5 81
+        ```
+        Note gnd10msg2 (0x150411) appears as well.
+
+        Pattern: 1a041e xx27 ffyy zz 81".
+            xx: values 7a..85 seen.
+            yy: values 00, 7f and 40 seen. (only)
+            zz: checksom? no clear pattern. values a2 up to df, non-continuous.
+
+        Example body: "df27 ff00 07 81"
+        Pattern seem to be: "xxxx yy zzZZ 81".
+        Does not vary a whole lot, yy is often 0xff.
+
+        xx is likely air pressure in pascals.
+        zz is a flag of sorts. 0x00, 0x40 and x07f seen.
+        ZZ seem to may be temperature in fahrenheit, when the flag is 0x00.
+        """
         mdesc = "environment"
 
         if strbody == 'ffffff40bf81':
             return   # XXX: NaN instead?
 
         body = checklength(pdu, 9)
-        keys = []
         #keys = intdecoder(body)
 
         pressure = body[0:16].uintle * 0.01
