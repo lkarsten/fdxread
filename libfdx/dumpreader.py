@@ -24,10 +24,12 @@ Expand to multiple lines if a single read returned multiple frames.
 Author: Lasse Karstensen <lasse.karstensen@gmail.com>, August 2016
 """
 from __future__ import print_function
-from pprint import pprint
+
+import logging
+
 from sys import argv, stderr
 from os.path import exists
-
+from pprint import pprint
 
 def dumpreader(inputfile, trim=False, seek=0):
     fp = open(inputfile)
@@ -37,7 +39,11 @@ def dumpreader(inputfile, trim=False, seek=0):
         if line.startswith("#"):
             continue
 
-        ts, mlen, pdu = line.split(None, 2)
+        try:
+            ts, mlen, pdu = line.split(None, 2)
+        except ValueError as e:
+            logging.warning("%s: %s" % (str(e), line))
+            raise
 
         for frame in pdu.split(" 81"):
             frame = frame.strip()
