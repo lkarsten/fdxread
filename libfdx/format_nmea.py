@@ -147,18 +147,6 @@ class format_NMEA0183(object):
                         "TempDir")
                        ]
 
-        else:
-            if sample["mdesc"] not in ["emptymsg0", "gpsping", "static1s",
-                                       "windsignal", "dst200depth2",
-                                       "gnd10msg2", "windmsg3", "wind40s",
-                                       "dst200msg0", "service0", "windmsg7",
-                                       "windmsg8", "windstale", "bootup0",
-                                       "dst200temp" ]:
-                logging.warning("Unhandled: '%s'" % pformat(sample))
-            else:
-                # Ignore known no-ops.
-                pass
-
         result = [",".join(x) for x in result]  # Make it a string.
         return self.checksum(result or None)
 
