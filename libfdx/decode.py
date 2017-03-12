@@ -64,7 +64,6 @@ def checklength(pdu, speclen):
     assert type(pdu) == str
     assert speclen is None or isinstance(speclen, int)
 
-    assert len(pdu) >= 3*2
     assert len(pdu) % 2 == 0
 
     if speclen is not None:
@@ -109,8 +108,8 @@ def FDXDecode(pdu):
     if pdu[-2:] != '81':
         raise DataError("missing tailer")
 
-    if len(pdu) < 6:
-        raise DataError("short message <6 bytes: %s" % pdu)
+    if len(pdu) < 5*2:
+        raise DataError("short message <5 bytes: %s" % pdu)
 
     mtype = int(pdu[:6], 16)
     strbody = pdu[6:]
