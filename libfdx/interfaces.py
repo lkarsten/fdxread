@@ -127,8 +127,11 @@ class GND10interface(object):
                     fdxmsg = FDXDecode(buf)
                 except (DataError, FailedAssumptionError,
                         NotImplementedError) as e:
-                    # This class concerns itself with the readable only.
-                    logging.warning("Ignoring exception: %s" % str(e))
+                    if "short message" in str(e):
+                        pass
+                    else:
+                        # This class concerns itself with the readable only.
+                        logging.warning("Ignoring exception: %s" % str(e))
                     self.n_errors += 1
                 else:
                     if fdxmsg is not None:
@@ -171,7 +174,10 @@ class HEXinterface(object):
                 fdxmsg = FDXDecode(frame)
             except (DataError, FailedAssumptionError,
                     NotImplementedError) as e:
-                logging.warning("Ignoring exception: %s" % str(e))
+                if "short message" in str(e):
+                    pass
+                else:
+                    logging.warning("Ignoring exception: %s" % str(e))
                 self.n_errors += 1
             else:
                 if fdxmsg is not None:

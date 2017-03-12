@@ -110,7 +110,7 @@ def FDXDecode(pdu):
         raise DataError("missing tailer")
 
     if len(pdu) < 6:
-        raise DataError("short message <6 bytes")
+        raise DataError("short message <6 bytes: %s" % pdu)
 
     mtype = int(pdu[:6], 16)
     strbody = pdu[6:]
