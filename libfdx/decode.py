@@ -361,8 +361,7 @@ def FDXDecode(pdu):
             raise FailedAssumptionError(mdesc, "Non-static body seen: %s" % strbody)
 
     elif mtype == 0x120416:
-        mdesc = "winddup"
-        return   # data is almost identical to wsi0. less clutter.
+        mdesc = "wsi1"
         body = checklength(pdu, 9)
         keys = intdecoder(body, width=16)
 
