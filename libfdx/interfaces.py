@@ -177,7 +177,7 @@ class HEXinterface(object):
                 if "short message" in str(e):
                     pass
                 else:
-                    logging.warning("Ignoring exception: %s" % str(e))
+                    logging.warning("%s" % str(e))
                 self.n_errors += 1
             else:
                 if fdxmsg is not None:

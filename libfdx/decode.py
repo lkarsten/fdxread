@@ -692,8 +692,8 @@ def FDXDecode(pdu):
         body = checklength(pdu, 3)
         keys = intdecoder(body, width=8)
     else:
-        raise NotImplementedError("handler for 0x%06x mlen=%s: %s"
-                                  % (mtype, mlen, pdu))
+        raise NotImplementedError("No handler for %i byte 0x%06x: %s"
+                                  % (mlen, mtype, pdu))
 
     keys += [('strbody', strbody)]
     keys += [('mdesc', mdesc)]
