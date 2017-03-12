@@ -346,11 +346,19 @@ def FDXDecode(pdu):
 
 
     elif mtype == 0x110213:
+        """11 02 13 - windstale (7 bytes)
+
+        Either be a WSI or GND10 artifact.
+
+        Always one of these two:
+          10175 00000081
+            250 ffff0081
+        """
         mdesc = "windstale"
-        if strbody == "00000081":
+        if strbody in ["00000081", "ffff0081"]:
             return
-        body = checklength(pdu, 7)
-        keys = intdecoder(body, width=8)
+        else:
+            raise FailedAssumptionError(mdesc, "Non-static body seen: %s" % strbody)
 
     elif mtype == 0x120416:
         mdesc = "winddup"

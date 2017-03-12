@@ -138,23 +138,6 @@ Attempts at covering the receiver unit with metal did not give any change in val
 done a thorough job, bring foil and/or a cooking tin next time.
 
 
-"11 02 13" group (7B) - desc: windstale
----------------------------------------
-
-Previously: windmsg1
-
-Only present with wind+dst200 running. 
-Present when dst200 was missing. Seems to either be a wind or GND10 artifact.
-
-Always one of these two:
-
-::
-  10175 11 02 13 00 00 00 81
-    250 11 02 13 ff ff 00 81
-
-Not immediately interesting.
-
-
 "12 04 16" group (9B) - desc: winddup
 -------------------------------------
 
