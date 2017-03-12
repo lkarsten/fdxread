@@ -445,17 +445,19 @@ def FDXDecode(pdu):
         if mlen < 13:
             return
         body = checklength(pdu, 13)
-        # 1471551078.44 ('0x200828', 'gpsmsg1', {'strbody': '3b1ccb0a51b2e000e581', 'uints': '059 028 203 010 081 178 224 000 229'})
-        # 0.0 ('0x200828', 'gpspos', {'strbody': '00000000000010001081',    -- # before position lock was attained
-        # where is fix information? none, 2d, 3d?
-        # hdop? elevation?
-        keys = intdecoder(body[48:], width=8)
+        keys = intdecoder(body[48:64], width=8)
+
         if strbody == "00000000000010001081":
             keys += [("elevation", float("NaN")),
                      ("lat", float("NaN")),
                      ("lon", float("NaN")),
                     ]
         else:
+            # 3b5bc70aa5b3e0005b81
+            # lat---      what
+            #       LON---    EL
+
+            # XXX: where is the fix information? none, 2d, 3d? Where is hdop?
             lat = Latitude(degree=body[0:8].uintle,
                            minute=body[8:24].uintle * 0.001)
             lon = Longitude(degree=body[24:32].uintle,
@@ -463,12 +465,6 @@ def FDXDecode(pdu):
 
             keys += [("elevation", feet2meter(body[64:72].uintle))]
             keys += [("lat", lat), ("lon", lon)]
-            #keys += [("gmapspos", "https://www.google.com/maps?ie=UTF8&hq&q=%s,%s+(Point)&z=11" % (lat, lon))]
-
-        # The gnd10-faked gps position message is 0x00000000000010001081, which
-        # makes the last octet and the third last octet stand out.
-        keys += [("fix1", body[48:56].uintle)]
-        keys += [("null", body[56:64].uintle)]
 
     elif mtype == 0x210425:
         mdesc = "gpscog"
