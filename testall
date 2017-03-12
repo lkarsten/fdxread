@@ -7,8 +7,8 @@ test -n "$CI" && CORES=2
 
 dumps=$(find dumps -name \*.dump)
 
-#echo $dumps | xargs -P${CORES} -n1 -- ./fdxread --format raw --pace 0 1>/dev/null
-echo $dumps | xargs -P${CORES} -n1 -- ./fdxread --format nmea0183 --pace 0 1>/dev/null
-#echo $dumps | xargs -P${CORES} -n1 -- ./fdxread --format json --pace 0 1>/dev/null
-#echo $dumps | xargs -P${CORES} -n1 -- ./fdxread --format signalk --pace 0 1>/dev/null
+#echo $dumps | xargs -P${CORES} -n1 -- ./fdxread --format raw 1>/dev/null
+echo $dumps | xargs -P${CORES} -n1 -- ./fdxread --format nmea0183 1>/dev/null
+#echo $dumps | xargs -P${CORES} -n1 -- ./fdxread --format json 1>/dev/null
+#echo $dumps | xargs -P${CORES} -n1 -- ./fdxread --format signalk 1>/dev/null
 
