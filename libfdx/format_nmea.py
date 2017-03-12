@@ -188,7 +188,7 @@ class TestNMEA0183(unittest.TestCase):
         msg = {"mdesc": "environment", "airpressure": 101.42, "temp_c": 21.0}
         r = formatter.handle(msg)
         assert isinstance(r, str)
-        assert r == "$ZZXDR,P,101.42000,B,Barometer*21\n$ZZXDR,C,21.00,C,TempDir*10"
+        assert r == "$ZZXDR,P,101.42000,B,Barometer*21\r\n$ZZXDR,C,21.00,C,TempDir*10"
 
 
 if __name__ == "__main__":

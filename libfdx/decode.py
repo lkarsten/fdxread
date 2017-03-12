@@ -838,25 +838,31 @@ def FDXDecode(pdu):
     return dict(keys)
 
 
+def _b(s):
+    from binascii import unhexlify
+    s = s.replace(" ", "")
+    return unhexlify(s)
+
+
 class FDXDecodeTest(unittest.TestCase):
     def test_simple(self):
         with self.assertRaises(DataError):
-            FDXDecode("81")
+            FDXDecode(_b("81"))
 
         with self.assertRaises(DataError):
-            FDXDecode("81 81")
+            FDXDecode(_b("81 81"))
 
-        r = FDXDecode("24 07 23 0f 1b 17 11 08 18 00 02 81")
+        r = FDXDecode(_b("24 07 23 0f 1b 17 11 08 18 00 02 81"))
         assert isinstance(r["utctime"], datetime)
         assert r["utctime"].isoformat() == "2016-08-17T15:27:23"
 
     def test_gps_position(self):
-        r = FDXDecode("20 08 28 00 00 00 00 00 00 10 00 10 81")  # No lock
+        r = FDXDecode(_b("20 08 28 00 00 00 00 00 00 10 00 10 81"))  # No lock
         self.assertEqual(r["mdesc"], "gpspos")
         assert isnan(r["lat"])
         assert isnan(r["lon"])
 
-        r = FDXDecode("20 08 28 3b 21 c3 0a ff 8e e0 00 42 81")  # Position
+        r = FDXDecode(_b("20 08 28 3b 21 c3 0a ff 8e e0 00 42 81"))  # Position
         self.assertEqual(r["mdesc"], "gpspos")
         assert isinstance(r["lat"], Latitude)
         assert isinstance(r["lon"], Longitude)
@@ -864,17 +870,17 @@ class FDXDecodeTest(unittest.TestCase):
         self.assertAlmostEqual(float(r["lon"].to_string("D")), 10.6101166667)
 
     def test_gps_cogsog(self):
-        r = FDXDecode("21 04 25 ff ff 00 00 00 81")  # No lock
+        r = FDXDecode(_b("21 04 25 ff ff 00 00 00 81"))  # No lock
         self.assertEqual(r["mdesc"], "gpscog")
         assert isnan(r["cog"])
         assert isnan(r["sog"])
 
-        r = FDXDecode("21 04 25 0c 01 66 7e 15 81 ")  # Steaming ahead
+        r = FDXDecode(_b("21 04 25 0c 01 66 7e 15 81 "))  # Steaming ahead
         self.assertEqual(int(r["cog"]), 177)
         self.assertEqual(r["sog"], 2.68)
 
         # gpstime
-        r = FDXDecode("24 07 23 11 26 1f 0f 08 18 00 37 81")
+        r = FDXDecode(_b("24 07 23 11 26 1f 0f 08 18 00 37 81"))
         self.assertEqual(r["mdesc"], "gpstime")
         assert isinstance(r["utctime"], datetime)
 
