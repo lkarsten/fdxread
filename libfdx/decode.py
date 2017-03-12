@@ -27,6 +27,7 @@ import logging
 import unittest
 from binascii import hexlify
 from datetime import datetime
+from decimal import Decimal
 from math import degrees, radians, isnan
 from pprint import pprint
 from sys import argv, stdin, stdout, stderr
@@ -163,9 +164,10 @@ def FDXDecode(pdu):
 
         awa = body[16:32].uintle * (360.0 / 2**16)
 
-        keys += [('awa', awa)]
-        keys += [('aws_hi', windspeed)]
+        keys += [('awa', Decimal(awa))]
         keys += [('aws_lo', body[32:46].uintle * 0.01)]
+        keys += [('aws_hi', Decimal(windspeed))]
+
 
     elif mtype == 0x020301:
         """02 03 01 - dst200temp (8 bytes, 5 Hz update rate)

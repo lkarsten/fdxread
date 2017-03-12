@@ -25,6 +25,7 @@ import json
 import logging
 import unittest
 from datetime import datetime
+from decimal import Decimal
 from operator import xor
 from math import radians, degrees
 from pprint import pprint, pformat
@@ -83,6 +84,8 @@ def json_serial(obj):
     """JSON serializer for objects not serializable by default json code"""
     if isinstance(obj, datetime):
         return obj.isoformat()
+    elif isinstance(obj, Decimal):
+        return "{0:.3}".format(obj)
     elif isinstance(obj, Latitude):
         return float(obj.to_string("D"))
     elif isinstance(obj, Longitude):
