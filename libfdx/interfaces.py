@@ -30,8 +30,7 @@ from time import time, sleep
 import serial
 
 from .decode import FDXDecode, DataError, FailedAssumptionError
-from .dumpreader import dumpreader
-from .nxbdump import nxbdump
+from .dumpreader import dumpreader, nxbdump
 
 
 class GND10interface(object):
@@ -165,11 +164,16 @@ class HEXinterface(object):
         if self.inputfile.endswith(".nxb"):
             reader = nxbdump(self.inputfile)
         else:
-            reader = dumpreader(self.inputfile, trim=True, seek=self.seek)
+            reader = dumpreader(self.inputfile, seek=self.seek)
 
-        for ts, mlen, frame in reader:
+        for msg in reader:
+            assert isinstance(msg, tuple)
+            assert len(msg) == 2
+            ts, frame = msg
+
+            assert isinstance(frame, bytes)
             assert len(frame) > 0
-            # print "trying to decode %i bytes: %s" % (len(frame), frame)
+
             try:
                 fdxmsg = FDXDecode(frame)
             except (DataError, FailedAssumptionError,

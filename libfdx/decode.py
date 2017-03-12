@@ -36,8 +36,7 @@ from time import sleep, time
 from LatLon23 import LatLon, Latitude, Longitude
 from bitstring import BitArray
 
-from .dumpreader import dumpreader
-from .nxbdump import nxbdump
+from .dumpreader import readable
 
 
 class DataError(Exception):
@@ -94,17 +93,17 @@ def disect(pdu):
 
 
 def FDXDecode(pdu):
-    if isinstance(pdu, bytes):
-        # For now.
-        if hasattr(pdu, "hex"):
-            pdu = pdu.hex()
-        else:
-            pdu = "".join(["%02x" % ord(x) for x in pdu])
+    # Hex-encode our carefully de-encoded bytes(), to avoid refactoring
+    # the whole world in one sitting.
+    assert isinstance(pdu, bytes)
+
+    if hasattr(pdu, "hex"):
+        pdu = pdu.hex()
+    else:
+        pdu = hexlify(pdu)
 
     assert isinstance(pdu, str)
-
-    if " " in pdu:
-        pdu = pdu.replace(" ", "")
+    assert pdu.isalnum()
 
     if pdu[-2:] != '81':
         raise DataError("missing tailer")

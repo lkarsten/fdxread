@@ -16,8 +16,8 @@
 #  Copyright (C) 2016-2017 Lasse Karstensen
 #
 """
-Parse the variety of hexdump dump files (in different formats from evolving
-dumpserial.py) and output it to stdout.
+Parse the variety of dump files (in different formats from evolving
+dumpserial.py, plus .nxb files) and output it to stdout.
 
 Expand to multiple lines if a single read returned multiple frames.
 
@@ -27,51 +27,89 @@ from __future__ import print_function
 
 import logging
 
+from binascii import unhexlify
 from sys import argv, stderr
 from os.path import exists
 from pprint import pprint
 
-def dumpreader(inputfile, trim=False, seek=0):
-    fp = open(inputfile)
-    fp.seek(seek)
 
-    for line in fp.readlines():
+def readable(s, sep=" "):
+    "hexlify with separator"
+    assert isinstance(sep, str)
+    if hasattr(s, "hex"):  # Python 3
+        return sep.join(["%02x" % x for x in s])
+    return sep.join(["%02x" % ord(x) for x in s])
+
+
+def nxbdump(nxbfile):
+    """
+    Scan save files (.nxb) from Nexus Race and output the bitstream.
+
+    References:
+    * http://www.nexusmarine.se/support/info-and-reg-nexus-software/software-download/
+    * http://www.chicagomarineelectronics.com/NX2_FDX.htm
+    """
+    # Use some ram and get on with it.
+    content = open(nxbfile, "rb").read()
+    assert type(content) == bytes
+
+    lastidx = 0
+    while True:
+        idx = content[lastidx:].find(b'\x81')
+        if idx == -1:
+            break
+
+        yield (0.0, content[lastidx:lastidx+idx+1])
+        lastidx = lastidx + idx + 1
+
+
+def dumpreader(inputfile, seek=0):
+    fp = open(inputfile, "r")
+    if seek != 0:
+        fp.seek(seek)
+
+    for line in fp:
         if line.startswith("#"):
             continue
 
         try:
             ts, mlen, pdu = line.split(None, 2)
-        except ValueError as e:
-            logging.warning("%s: %s" % (str(e), line))
+            assert len(pdu) in [3*int(mlen), int(mlen)]
+        except (ValueError, AssertionError) as e:
+            logging.warning("dumpreader(): %s: %s" % (str(e), line))
             raise
 
-        for frame in pdu.split(" 81"):
-            frame = frame.strip()
-            if frame is "":
-                continue
+        pdu = pdu.strip()
+        pdu = pdu.replace(" ", "")
+        # Decode the hex encoding and give us bytes().
+        pdu = unhexlify(pdu)
 
-            frame += " 81"
+        lastidx = 0
+        while True:
+            idx = pdu[lastidx:].find(b'\x81')
+            if idx == -1:
+                break
+            yield (ts, pdu[lastidx:lastidx+idx+1])
 
-            s = frame.replace(" ", "")
-            assert len(s) % 2 == 0
-
-            if trim:
-                frame = frame.replace(" ", "")
-
-            yield (ts, len(s) // 2, frame)
-
+            lastidx = lastidx + idx + 1
             if float(ts) < 2.0:  # The format has differential time stamps.
                 # Subsequent frames in a single read arrived without delay.
                 ts = "0.000000"
 
 
 if __name__ == "__main__":
+    savefile = argv[-1]
     if len(argv) < 2 or not exists(argv[-1]):
-        print("Usage: %s dumpfile.fdx" % argv[0], file=stderr)
+        print("Usage: %s savefile.(nxb|fdx|dump)" % argv[0], file=stderr)
         exit(1)
 
-    for record in dumpreader(argv[1]):
+    if ".nxb" in savefile:
+        records = nxbdump(savefile)
+    else:
+        records = dumpreader(savefile)
+
+    for ts, frame in records:
         try:
-            print("%s\t%s\t%s" % (record))
+            print("%s\t%s" % (ts, readable(frame)))
         except IOError:
             exit()

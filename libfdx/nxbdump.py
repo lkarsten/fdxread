@@ -31,32 +31,26 @@ from pprint import pprint
 from sys import argv
 from os.path import exists
 
-from bitstring import BitArray
 
-
-def hexd(data):
-    """
-    >>> hexd(BitArray(hex="0x1ff"))
-    '1f f'
-    """
-    assert type(data) == BitArray
-    s = []
-    for i in range(0, data.len, 8):
-        s += ["%s%s" % (data[i:i+4].hex, data[i+4:i+8].hex)]
-    return " ".join(s)
+def readable(s):
+    if hasattr(s, "hex"):  # Python 3
+        return " ".join(["%02x" % x for x in s])
+    return " ".join(["%02x" % ord(x) for x in s])
 
 
 def nxbdump(inputfile):
-    with open(inputfile, "r") as fp:
-        stream = BitArray(fp)
-        while True:
-            idx = stream.find('0x81', bytealigned=True)
-            if not idx:
-                break
-            pdu = stream[:idx[0]+8]
-            # print "pdu is: ", hexd(pdu)
-            stream = stream[idx[0]+8:]
-            yield (0.0, len(pdu) // 8, hexd(pdu))
+    # Use some ram and get on with it.
+    content = open(inputfile, "rb").read()
+    assert type(content) == bytes
+
+    lastidx = 0
+    while True:
+        idx = content[lastidx:].find(b'\x81')
+        if idx == -1:
+            break
+
+        yield (0.0, content[lastidx:lastidx+idx+1])
+        lastidx = lastidx + idx + 1
 
 
 if __name__ == "__main__":
@@ -64,8 +58,8 @@ if __name__ == "__main__":
         print("Usage: %s savefile.nxb" % argv[0])
         exit(1)
 
-    for record in nxbdump(argv[1]):
+    for ts, frame in nxbdump(argv[1]):
         try:
-            print("%s\t%s\t%s" % (record))
+            print("%s\t%s" % (ts, readable(frame)))
         except IOError:
             exit()
