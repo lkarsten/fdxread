@@ -266,8 +266,10 @@ def FDXDecode(pdu):
         mdesc = "baker_bravo"
         body = checklength(pdu, 7)
         keys = intdecoder(body)
-        if body[8:16].uintle != 0xff:
-            raise FailedAssumptionError(mdesc, "Middle char not 0xff, but %s" % str(body[8:16]))
+
+        middle = body[8:16].uintle
+        if middle not in [0xff, 0xfe]:
+            raise FailedAssumptionError(mdesc, "Middle char not 0xff or 0xfe, but %s" % str(body[8:16]))
 
 
     elif mtype == 0x070304:
