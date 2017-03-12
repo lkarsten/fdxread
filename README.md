@@ -13,8 +13,8 @@ fdxread requirements are listed in `requirements.txt` and should be installed
 using pip.
 
 ```
-    git clone https://github.com/lkarsten/GND10read.git
-    cd GND10read
+    git clone https://github.com/lkarsten/fdxread.git
+    cd fdxread
     virtualenv --system-site-packages venv
     . venv/bin/activate
     pip install -r requirements.txt
