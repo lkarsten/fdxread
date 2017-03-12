@@ -712,10 +712,27 @@ def FDXDecode(pdu):
             raise FailedAssumptionError(mdesc, "xx != yy (got %s, expect %s)"
                                         % (strbody[2:4], strbody[0:2]))
 
+    elif mtype == 0x32093b:
+        """32 09 3b - conf_able (11 bytes, non-periodic)
+
+        Seen in the Baker data set. Suspected to be related to manual calibration.
+
+        Only value seen: 04045a4aff000081
+        """
+        mdesc = "conf_able"
+        body = checklength(pdu, 11)
+        keys = intdecoder(body)
+
+        if strbody != "04045a4aff000081":
+            raise FailedAssumptionError(mdesc, "got %s, expected %s"
+                                        % (strbody, "04045a4aff000081"))
+
+
     elif mtype == 0x310938:
         mdesc = "windmsg7"
         body = checklength(pdu, 14)
         keys = intdecoder(body)
+
 
     elif mtype == 0x350336:
         mdesc = "windmsg8"
@@ -735,6 +752,48 @@ def FDXDecode(pdu):
         else:
             raise FailedAssumptionError(mdesc, "got %s, expected %s"
                                         % (middle, "000081"))
+
+    elif mtype == 0x3d122f:
+        """3d 12 2f - conf_easy (23 bytes, not periodic)
+
+        Seen in the Baker data set. Strongly suspected to be related to manual calibration
+        or configuration of an NX2 server.
+
+        Values seen:
+          3d122f 2700 0000 0000 0000 0000 0000 0000 0000 0000 27 81
+          3d122f 2700 327b ad01 d976 a050 4c41 5400 0000 0000 c4 81
+          3d122f 2700 3276 b001 797b a043 5552 523f 504f 5300 15 81
+
+        Observation: these are the same payloads that are seen on conf_dog/0x3e122c.
+
+          3e122c 2700 0000 0000 0000 0000 0000 0000 0000 0000 27 81
+          3e122c 2700 327b ad01 d976 a050 4c41 5400 0000 0000 c4 81
+
+
+        """
+        mdesc = "conf_easy"
+        body = checklength(pdu, 23)
+        keys = intdecoder(body, width=8)
+
+
+    elif mtype == 0x3e122c:
+        """3e 12 2c - conf_dog (23 bytes, not periodic)
+        (skipping _baker and _charlie in army/navy phonetics due to baker prefix already in use)
+
+        Seen in the Baker data set. Strongly suspected to be related to manual calibration
+        or configuration of an NX2 server.
+
+        Values seen:
+          3e122c 2700 0000 0000 0000 0000 0000 0000 0000 0000 27 81
+          3e122c 2700 327b ad01 d976 a050 4c41 5400 0000 0000 c4 81
+          3e122c 2700 3276 b001 797b a043 5552 523f 504f 5300 15 81
+
+
+        """
+        mdesc = "conf_dog"
+        body = checklength(pdu, 23)
+        keys = intdecoder(body, width=8)
+
 
     elif mtype == 0x410a4b:
         """41 0a 4b - baker_indian (0.5 Hz)
