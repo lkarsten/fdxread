@@ -653,6 +653,29 @@ def FDXDecode(pdu):
         mdesc = "service0"
         body = checklength(pdu, 10)
         keys = intdecoder(body)
+
+    elif mtype == 0x300131:
+        """30 01 31 - baker_lima (very seldom)
+
+        Unknown 6 byte message.
+
+        The two body octets are equal in all observed messages.
+
+        Timing: 4 messages seen in quick succession, different data. Another 12s
+        later, then quiet for two minutes. New chunk of 4 in 2s, quiet for
+        about a minute, then one last.
+
+        In the GND10 dumps, this message appears every 16-25 minutes.
+
+        Theory: some sort of "i'm alive" or "brightness is n" broadcast?
+        """
+        mdesc = "baker_lima"
+        body = checklength(pdu, 6)
+        keys = intdecoder(body)
+        if strbody[0:2] != strbody[2:4]:
+            raise FailedAssumptionError(mdesc, "xx != yy (got %s, expect %s)"
+                                        % (strbody[2:4], strbody[0:2]))
+
     elif mtype == 0x310938:
         mdesc = "windmsg7"
         body = checklength(pdu, 14)
