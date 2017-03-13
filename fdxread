@@ -31,7 +31,9 @@ from os.path import isfile, exists
 from pprint import pprint
 from sys import argv, stdout
 
-from libfdx import *
+import libfdx
+
+__version__ = libfdx.__version__
 
 def main():
     parser = argparse.ArgumentParser(
@@ -63,13 +65,13 @@ def main():
 
     args.format = args.format.lower()
     if args.format == "nmea0183":
-        fmter = format_NMEA0183(joinlines=True)
+        fmter = libfdx.format_NMEA0183(joinlines=True)
     elif args.format == "json":
-        fmter = format_json(devmode=False)
+        fmter = libfdx.format_json(devmode=False)
     elif args.format == "raw":
-        fmter = format_json(devmode=True)
+        fmter = libfdx.format_json(devmode=True)
     elif args.format == "signalk":
-        fmter = format_signalk_delta()
+        fmter = libfdx.format_signalk_delta()
     elif args.format == "none":
         fmter = None
     else:
@@ -81,9 +83,9 @@ def main():
 
     if exists(args.input):
         if args.input.startswith("/dev"):
-            reader = GND10interface(args.input, send_modechange=args.send_psilfdx)
+            reader = libfdx.GND10interface(args.input, send_modechange=args.send_psilfdx)
         else:
-            reader = HEXinterface(args.input, seek=args.seek, frequency=args.pace)
+            reader = libfdx.HEXinterface(args.input, seek=args.seek, frequency=args.pace)
     else:
         print("ERROR: Don't know how to read or open %s" % args.input)
         exit(1)
