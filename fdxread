@@ -37,7 +37,7 @@ __version__ = libfdx.__version__
 
 def main():
     parser = argparse.ArgumentParser(
-        description="fdxread - Nexus FDX parser (incl. Garmin GND10)",
+        description="fdxread v%s - Nexus FDX parser (incl. Garmin GND10)" % __version__,
         epilog="fdxread is used to read FDX protocol data from Garmin GND10 units.")
 
     parser.add_argument("input", help="Serial port or file to read from.\nExamples: /dev/ttyACM0, COM3, ./file.dump",
