@@ -90,24 +90,27 @@ NMEA Sleuth can be found in https://github.com/lkarsten/fdxread/issues/6 .
 -------------
 
 ```
-$ fdxread -h
-usage: fdxread [-h] [--format fmt] [--seek n] [--pace n] [-v] inputfile
+usage: fdxread [-h] [--format fmt] [--seek n] [--pace n] [--send-psilfdx] [-v]
+               inputfile
 
-fdxread - Nexus FDX parser (incl. Garmin GND10)
+fdxread v0.9.1 - Nexus FDX parser (incl. Garmin GND10)
 
 positional arguments:
-inputfile      Serial port or file to read from. Examples: /dev/ttyACM0,
-	     COM3, ./file.dump
+  inputfile       Serial port or file to read from. Examples: /dev/ttyACM0,
+                  COM3, ./file.dump
 
 optional arguments:
--h, --help     show this help message and exit
---format fmt   Output mode, default nmea0183. (json, signalk, nmea0183, raw)
---seek n       Seek this many bytes into file before starting (for files)
---pace n       Pace reading to n messages per second (for files)
--v, --verbose  Verbose output
+  -h, --help      show this help message and exit
+  --format fmt    Output mode, default nmea0183. (json, signalk, nmea0183,
+                  none, raw)
+  --seek n        Seek this many bytes into file before starting (for files)
+  --pace n        Pace reading to n messages per second (for files)
+  --send-psilfdx  Send initial mode change command to port (for NX2 server)
+                  (experimental)
+  -v, --verbose   Verbose output
 
 fdxread is used to read FDX protocol data from Garmin GND10 units.
-
+```
 
 Background information
 ----------------------
@@ -119,9 +122,7 @@ figure out, some other metrics I'm still not sure is right.
 Use at your own risk.
 
 On a side note, I believe this is the only open/freely available document on the
-frame format of the `Fast Data eXchange (FDX)` protocol used in Nexus Marine
-AB's Nexus products, now owned by Garmin. See `fdxprotocol.rst` and
-`libfdx/decode.py` for notes taken while working this out.
+format of the [FDX](https://en.wikipedia.org/wiki/Fast_Data_eXchange) protocol.
 
 
 Development
@@ -130,11 +131,11 @@ Development
 The development happens in git on https://github.com/lkarsten/fdxread/
 
 ```
-    git clone https://github.com/lkarsten/fdxread.git
-    cd fdxread
-    virtualenv --system-site-packages venv
-    . venv/bin/activate
-    pip install -r requirements.txt
+    $ git clone https://github.com/lkarsten/fdxread.git
+    $ cd fdxread
+    $ virtualenv --system-site-packages venv
+    $ . venv/bin/activate
+    $ pip install -r requirements.txt
 ```
 
 
