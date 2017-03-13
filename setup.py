@@ -10,8 +10,6 @@ from setuptools import setup, find_packages
 from codecs import open
 from os import path
 
-from libfdx import __version__
-
 here = path.abspath(path.dirname(__file__))
 
 # Get the long description from the README file
@@ -24,7 +22,7 @@ setup(
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version=__version__,
+    version="0.9.1",
 
     description='An FDX protocol reader for Garmin GND10',
     long_description=long_description,
