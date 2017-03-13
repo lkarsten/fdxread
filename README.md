@@ -51,7 +51,7 @@ access to devices in `/dev/` the user it runs as should be added to the
 There may be parse warnings logged to stderr that clutter the screen. These can be
 filtered with console redirection as usual: ` 2>/dev/null`
 
-When reading a saved file it is recommended to add "--pace 1" to slow down the output flow.
+When reading a saved file it is recommended to add "--pace 5" to slow down the output flow.
 A file for testing can be found in the source repository: https://github.com/lkarsten/fdxread/raw/master/dumps/onsdagsregatta-2016-08-24.dump
 
 ```
