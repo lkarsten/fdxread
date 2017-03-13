@@ -73,14 +73,14 @@ Using it with OpenCPN and other software
 ----------------------------------------
 
 For now the best of running it is to pipe the output to a NMEA multiplexer
-over the network.
+using TCP.
 
 I prefer the [kplex](http://www.stripydog.com/kplex/) multiplexer. After
-installing it, it can be started as such:
+installing it, it can be started with:
 `kplex tcp:direction=both,mode=server,address=127.0.0.1,port=10110`
 
-You then pipe the output from fdxread into it using netcat.
-```fdxread /dev/ttyACM0`| nc localhost 10110```
+You then pipe the output from fdxread into it using netcat:
+```fdxread /dev/ttyACM0 | nc localhost 10110```
 
 Some information on how to set up OpenCPN and the Chrome application
 NMEA Sleuth can be found in https://github.com/lkarsten/fdxread/issues/6 .
