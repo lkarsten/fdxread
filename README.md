@@ -9,54 +9,104 @@ The GND10 unit is used on boats and translates between Nexus FDX and NMEA2000.
 Installation
 ------------
 
-fdxread requirements are listed in `requirements.txt` and should be installed
-using pip.
+`fdxread` is available from https://pypi.python.org/pypi/fdxread/ and should be installed using pip:
 
 ```
-    git clone https://github.com/lkarsten/fdxread.git
-    cd fdxread
-    virtualenv --system-site-packages venv
-    . venv/bin/activate
-    pip install -r requirements.txt
+$ pip install fdxread
+$ fdxread --help  # Should be in $PATH
 ```
 
-Tested on Linux and OS X.
+Tested on Linux and OS X, with Python 2.7 and Python 3.6. Goal is that it should
+work laptops and on any raspberry pis out there.
+
+Note that on Debian systems you need to run `apt-get install python-dev` first
+for the LatLon23 (dependency) module to install/compile correctly. (at least on
+my armhf jessie system)
+
+If you don't want to install it globally on the system, you can use a virtualenv
+like described in the development section below.
+
 
 Running it
 ----------
 
-```
-    $ ./fdxread -h
-    usage: fdxread [-h] [--format fmt] [--seek n] [--pace n] [-v] inputfile
+fdxread will read FDX either from a saved file (.dump/.nxb) or from a
+serial port.
 
-    fdxread - Nexus FDX parser (incl. Garmin GND10)
-
-    positional arguments:
-      inputfile      Serial port or file to read from. Examples: /dev/ttyACM0,
-                     COM3, ./file.dump
-
-    optional arguments:
-      -h, --help     show this help message and exit
-      --format fmt   Output mode, default nmea0183. (json, signalk, nmea0183, raw)
-      --seek n       Seek this many bytes into file before starting (for files)
-      --pace n       Pace reading to n messages per second (for files)
-      -v, --verbose  Verbose output
-
-    fdxread is used to read FDX protocol data from Garmin GND10 units.
-```
-
+It will send output to the terminal (stdout) on the format configured,
+normally NMEA0183.
 
 ```
-	(inside a populated virtualenv, as described above)
-	./fdxread /dev/ttyACM0
+$ fdxread /dev/ttyACM0
+$FVMWV,268.64,R,0.06,K,A*20
+$ZZXDR,P,102.23000,B,Barometer*25
+$SDDBT,,f,4.86,m,,F*1C
+[ .. output cut .. ]
 ```
 
-This will read FDX from `/dev/ttyACM0`, and output NMEA0183 to stdout.
+fdxread does not require root permissions. It should not be run under sudo. For
+access to devices in `/dev/` the user it runs as should be added to the
+`dialout` group. (on Debian/Ubuntu)
 
-To avoid having to muck around with serial ports and locking, I usually run a
-[kplex](http://www.stripydog.com/kplex/) TCP server on port 10110, and pipe the
-output to it using netcat. That way OpenCPN can read it easily, and I get to
-know where I am on the map.
+There may be parse warnings logged to stderr that clutter the screen. These can be
+filtered with console redirection as usual: ` 2>/dev/null`
+
+When reading a saved file it is recommended to add "--pace 1" to slow down the output flow.
+A file for testing can be found in the source repository: https://github.com/lkarsten/fdxread/raw/master/dumps/onsdagsregatta-2016-08-24.dump
+
+```
+$ fdxread --pace 5 onsdagsregatta-2016-08-24.dump | head -10
+WARNING:root:No handler for 6 byte 0x020200: 020200000081
+$FVMWV,268.64,R,0.06,K,A*20
+$ZZXDR,P,102.23000,B,Barometer*25
+$ZZXDR,C,22.22,C,TempDir*13
+$SDDBT,,f,4.86,m,,F*1C
+$SDVHW,0.0,T,0.0,M,0.00,N,0.0,K*72
+$FVMWV,268.64,R,0.06,K,A*20
+$SDDBT,,f,4.86,m,,F*1C
+$SDVHW,0.0,T,0.0,M,0.00,N,0.0,K*72
+$FVMWV,262.14,R,1.08,K,A*22
+$SDDBT,,f,4.86,m,,F*1C
+```
+
+Using it with OpenCPN and other software
+----------------------------------------
+
+For now the best of running it is to pipe the output to a NMEA multiplexer
+over the network.
+
+I prefer the [kplex](http://www.stripydog.com/kplex/) multiplexer. After
+installing it, it can be started as such:
+ `kplex tcp:direction=both,mode=server,address=127.0.0.1,port=10110`.
+
+You then pipe the output from fdxread into it using netcat.
+`fdxread /dev/ttyACM0`| nc localhost 10110`
+
+Some information on how to set up OpenCPN and the Chrome application
+NMEA Sleuth can be found in https://github.com/lkarsten/fdxread/issues/6 .
+
+
+--help output
+-------------
+
+```
+$ fdxread -h
+usage: fdxread [-h] [--format fmt] [--seek n] [--pace n] [-v] inputfile
+
+fdxread - Nexus FDX parser (incl. Garmin GND10)
+
+positional arguments:
+inputfile      Serial port or file to read from. Examples: /dev/ttyACM0,
+	     COM3, ./file.dump
+
+optional arguments:
+-h, --help     show this help message and exit
+--format fmt   Output mode, default nmea0183. (json, signalk, nmea0183, raw)
+--seek n       Seek this many bytes into file before starting (for files)
+--pace n       Pace reading to n messages per second (for files)
+-v, --verbose  Verbose output
+
+fdxread is used to read FDX protocol data from Garmin GND10 units.
 
 
 Background information
@@ -72,6 +122,21 @@ On a side note, I believe this is the only open/freely available document on the
 frame format of the `Fast Data eXchange (FDX)` protocol used in Nexus Marine
 AB's Nexus products, now owned by Garmin. See `fdxprotocol.rst` and
 `libfdx/decode.py` for notes taken while working this out.
+
+
+Development
+-----------
+
+The development happens in git on https://github.com/lkarsten/fdxread/
+
+```
+    git clone https://github.com/lkarsten/fdxread.git
+    cd fdxread
+    virtualenv --system-site-packages venv
+    . venv/bin/activate
+    pip install -r requirements.txt
+```
+
 
 License
 -------
