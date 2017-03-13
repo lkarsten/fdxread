@@ -77,10 +77,10 @@ over the network.
 
 I prefer the [kplex](http://www.stripydog.com/kplex/) multiplexer. After
 installing it, it can be started as such:
- `kplex tcp:direction=both,mode=server,address=127.0.0.1,port=10110`.
+`kplex tcp:direction=both,mode=server,address=127.0.0.1,port=10110`
 
 You then pipe the output from fdxread into it using netcat.
-`fdxread /dev/ttyACM0`| nc localhost 10110`
+```fdxread /dev/ttyACM0`| nc localhost 10110```
 
 Some information on how to set up OpenCPN and the Chrome application
 NMEA Sleuth can be found in https://github.com/lkarsten/fdxread/issues/6 .
