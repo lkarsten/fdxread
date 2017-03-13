@@ -72,7 +72,7 @@ $SDDBT,,f,4.86,m,,F*1C
 Using it with OpenCPN and other software
 ----------------------------------------
 
-For now the best of running it is to pipe the output to a NMEA multiplexer
+For now the best way of running it is to pipe the output to a NMEA multiplexer
 using TCP.
 
 I prefer the [kplex](http://www.stripydog.com/kplex/) multiplexer. After
