@@ -162,9 +162,7 @@ class HEXinterface(object):
 
     def recvmsg(self):
         if self.inputfile.endswith(".nxb"):
-            if self.seek != 0:
-                raise NotImplementedError("seeking in nxb")
-            reader = nxbdump(self.inputfile)
+            reader = nxbdump(self.inputfile, seek=self.seek)
         else:
             reader = dumpreader(self.inputfile, seek=self.seek)
 

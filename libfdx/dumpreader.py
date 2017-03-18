@@ -41,7 +41,7 @@ def readable(s, sep=" "):
     return sep.join(["%02x" % ord(x) for x in s])
 
 
-def nxbdump(nxbfile):
+def nxbdump(nxbfile, seek=0):
     """
     Scan save files (.nxb) from Nexus Race and output the bitstream.
 
@@ -53,7 +53,7 @@ def nxbdump(nxbfile):
     content = open(nxbfile, "rb").read()
     assert type(content) == bytes
 
-    lastidx = 0
+    lastidx = seek
     while True:
         idx = content[lastidx:].find(b'\x81')
         if idx == -1:
@@ -65,8 +65,7 @@ def nxbdump(nxbfile):
 
 def dumpreader(inputfile, seek=0):
     fp = open(inputfile, "r")
-    if seek != 0:
-        fp.seek(seek)
+    seeklen = 0
 
     for line in fp:
         if line.startswith("#"):
@@ -89,24 +88,38 @@ def dumpreader(inputfile, seek=0):
             idx = pdu[lastidx:].find(b'\x81')
             if idx == -1:
                 break
-            yield (ts, pdu[lastidx:lastidx+idx+1])
 
+            frame = pdu[lastidx:lastidx+idx+1]
             lastidx = lastidx + idx + 1
+
+            if seeklen < seek:
+                seeklen += len(frame)
+                continue
+
+            yield (ts, frame)
+
             if float(ts) < 2.0:  # The format has differential time stamps.
                 # Subsequent frames in a single read arrived without delay.
                 ts = "0.000000"
 
 
 if __name__ == "__main__":
-    savefile = argv[-1]
-    if len(argv) < 2 or not exists(argv[-1]):
+    if "python" in argv:
+        argv.pop(argv.index("python"))
+
+    if len(argv) < 2 or not exists(argv[1]):
         print("Usage: %s savefile.(nxb|fdx|dump)" % argv[0], file=stderr)
         exit(1)
+    savefile = argv[1]
+
+    seek = 0
+    if len(argv) == 3:
+        seek = int(argv[2])
 
     if ".nxb" in savefile:
-        records = nxbdump(savefile)
+        records = nxbdump(savefile, seek=seek)
     else:
-        records = dumpreader(savefile)
+        records = dumpreader(savefile, seek=seek)
 
     for ts, frame in records:
         try:
