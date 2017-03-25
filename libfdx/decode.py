@@ -451,7 +451,7 @@ def FDXDecode(pdu):
         temp = body[32:40].uintle  # zz
         # These are not right. It is never 41 degrees celcius in Norway ;-)
         keys += [('temp_f', temp)]
-        keys += [('temp_c', fahr2celcius(temp))]
+#        keys += [('temp_c', fahr2celcius(temp))]
 
     elif mtype == 0x1c031f:
         mdesc = "wind40s"
