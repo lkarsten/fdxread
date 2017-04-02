@@ -23,7 +23,11 @@
 frames:
     - 0x000202:
         name: "emptymsg0"
-        length: 3
+        length: 6
+        doc: |
+            Seen: ff ff ff 00 81  Mistaken 0x81 mistaken as delim?
+            Seen: 00 02 02 83 02 81 81
+
 
         invariants: {
             _body: { always: [0xffff0081, 0x00000081] }
@@ -32,9 +36,11 @@ frames:
 
     - 0x010405:
         name: "wsi0"
-        length: 9
+        length: 8
         doc: |
             01 04 05 - wsi0 (9 bytes, 3 Hz)
+
+            Seen: 01 04 05 b5 04 f0 ca 8b 81
 
             If only GND10 (no wind or dst200), always 0xffff00000081.
             When the wind box has crashed/browned out, the body is: ffff00000081
@@ -58,6 +64,9 @@ frames:
         doc: |
             02 03 01 - dst200temp (8 bytes, 5 Hz update rate)
             Previously: dst200msg1, dst200depth2
+
+            Seen: 02 03 01 00 00 01 01 81
+            Seen: 02 03 01 00 00 01 01 81
 
             Reduced set of distinct bodies seen when DST200 is disconnected:
                2 '0600000681'})
@@ -95,7 +104,7 @@ frames:
 
             (increasing from 254 155 onto 000 156 and proceeding upwards.)
 
-        length: 6   # Or 10..
+        length: 7
         fields: {
             internal_temperature: { index: 0, length: 2, scaling_function: "deci" },
             inttempC: { index: 0, length: 2, scaling_function: ["deci", "fahr2celcius"] },
@@ -114,15 +123,27 @@ frames:
             body: ["000081", "020281"]
         }
 
+    - 0x040307:
+        name: "april_echo"
+        length: 7
+        doc: |
+            Unknown 7 byte message from QuickRec.nxb.
+
+            Seen: 04 03 07 5b 62 20 19 81
+
+
     - 0x050207:
         name: "baker_alpha"
-        length: 7
+        length: 6
         doc: |
             05 02 07 - baker_alpha (2-3Hz)
 
-            Unknown 7 byte frame type seen in the Baker data file.
+            Unknown 6 byte frame type seen in the Baker data file.
 
-            Pattern 05 02 07 xx ff yy 81
+            Seen:
+                05 02 07 fb ff 04
+
+            Pattern 05 02 07 xx ff
             211 < xx < 259,
             6 < yy < 55. usually jumps in increments of ~10.
 
@@ -137,16 +158,18 @@ frames:
 
     - 0x060204:
         name: "baker_bravo"
-        length: 7
+        length: 6
         doc: |
             06 02 04 - baker_bravo (n Hz)
 
-            Unknown 7 byte frame type seen in the Baker data file.
+            Unknown 6 byte frame type seen in the Baker data file.
 
-            24 ff db 81
-            2d ff d2 81
-            1a ff e5 81
-            10 ff ef 81
+            Seen:
+                06 02 04 a7 fe 59
+                06 02 04 24 ff db
+                06 02 04 2d ff d2
+                06 02 04 1a ff e5
+                06 02 04 10 ff ef
 
             Pattern: 06 02 04 xx ff yy 81
 
@@ -164,7 +187,9 @@ frames:
 
     - 0x070304:
         name: "dst200depth"   # previously "dst200msg3"
-        length: 8
+        length: 7
+        doc: |
+            Seen: 07 03 04 cd 2a 1e f9 81
 
         fields: {
             depth: { index: 0, length: 2, scaling_function: "deci" },
@@ -182,9 +207,12 @@ frames:
 
     - 0x080109:
         name: "static1s"  # ex windmsg0, stalemsg0
-        length: 6
+        length: 5
         doc: |
             static1s -
+
+            Seen: 08 01 09 21 21 81
+
 
         fields:
             xx: { index: 0, length: 1,  }
@@ -199,9 +227,12 @@ frames:
 
     - 0x090108:
         name: "windsignal"
-        length: 6
+        length: 5
         doc: |
-            foo
+
+            Seen:
+                09 01 08 90 90 81
+                09 01 08 8f 8f 81
 
         fields: {
             xx: { index: 0, length: 1,  },
@@ -229,6 +260,35 @@ frames:
             body: { always: "00003e023c" }
         }
 
+    - 0x0c010d:
+        name: "april_delta"
+        length: 5
+        doc: |
+            Unknown 5 byte message from QuickRec.nxb.
+
+            Seen: 0c 01 0d 80 80 81
+
+
+    - 0x0d020f:
+        name: "april_alpha"
+        length: 6
+        doc: |
+            0d 02 0f - april_alpha
+
+            Seen: 0d 02 0f 00 00 00 81
+
+            Unknown 6 byte frame type seen in QuickRec.nxb.
+
+    - 0x0e020c:
+        name: "april_foxtrot"
+        length: 6
+        doc: |
+            0d 02 0f - april_foxtrot
+            Unknown 6 byte frame type seen in QuickRec.nxb.
+
+            Seen: 0e 02 0c ff ff 00 81
+
+
     - 0x0f040b:
         name: "baker_charlie"
         length: 8
@@ -242,6 +302,15 @@ frames:
         invariants: {
             body: { always: "6653a60497" }
         }
+
+    - 0x100414:
+        name: "april_bravo"
+        length: 8
+        doc: |
+
+            Unknown 8 byte message from QuickRec.nxb.
+
+            Seen: 10 04 14 17 00 00 00 17 81
 
 
     - 0x110213:
@@ -268,7 +337,9 @@ frames:
 
     - 0x130211:
         name: "gpsping"
-        length: 7
+        doc: |
+            Seen: 13 02 11 00 00 00 81
+        length: 6
 
         fields: {
             unknown: { index: 0, length: 2 }
@@ -295,6 +366,15 @@ frames:
             u2: { index: 2, length: 2 },
             uint8: { index: 4, length: 1 }
         }
+
+    - 0x160412:
+        name: "april_charlie"
+        length: 8
+        doc: |
+            Unknown 8 byte message from QuickRec.nxb.
+
+            Seen: 16 04 12 02 00 00 00 02 81
+
 
     - 0x170512:
         name: "static2s_two"
@@ -355,7 +435,7 @@ frames:
 
     - 0x1c031f:
         name: "wind40s"
-        length: 8
+        length: 7
 
         fields: {
             xx: { index: 0, length: 1},
@@ -444,12 +524,14 @@ frames:
 
     - 0x220725:
         name: "baker_delta"
-        length: 8
+        length: 11
         doc: |
             22 07 25 - baker_delta (1 Hz)
 
             Unknown message from the Baker data set.
             Always 220725ffffffffffffffff81.
+
+            Seen: 22 07 25 ff ff ff ff ff ff ff ff 81
 
         invariants: {
             _body: { foo: "ffffffffffffffff" }
@@ -465,6 +547,7 @@ frames:
 
     - 0x240723:
         name: "gpstime"
+
         length: 11
         doc: |
             24 07 23 - gpstime (11 bytes, 1Hz update rate)
@@ -483,8 +566,9 @@ frames:
             z: appears to be some sort of checksum. no clear pattern.
 
             Common messages:
-              ffffff00000010ef81 (nolock1)
-              ffffff00808010ef81 (nolock2)
+              24 07 23 ff ff ff 00 00 00 10 ef 81 (nolock1)
+              24 07 23 ff ff ff 00 80 80 10 ef 81 (nolock2)
+              24 07 23 0e 31 10 16 08 18 00 29 01 09 15 15
 
             Flaps data alternates between nolock1 and nolock2 during startup.
 
@@ -567,11 +651,32 @@ frames:
 
     - 0x2c022e:
         name: "dst200msg0"
-        length: 7
+        length: 6
+        doc: |
+            Seen:
+                2c 02 2e 14 0f 1b 81
+                2c 02 2e 15 0f 1a 81
 
     - 0x2d0528:
         name: "service0"
-        length: 10
+        length: 9
+        doc: |
+            Seen: 2d 05 28 02 03 86 00 13 94
+
+    - 0x2e052b:
+        name: "april_indian"
+        length: 9
+        doc: |
+
+            Seen: 2e 05 2b 0f 19 3f 00 16 3f 81
+
+    - 0x2f022d:
+        name: "april_golf"
+        length: 6
+        doc: |
+            Unknown 6 byte frame type seen in GND10 dumps.
+
+            Seen: 2f 02 2d 7f 16 69 81
 
     - 0x300131:
         name: "baker_lima"
@@ -605,45 +710,60 @@ frames:
 
     - 0x32093b:
         name: "conf_able"
-        length: 11
+        length: 13
         doc: |
-            32 09 3b - conf_able (11 bytes, non-periodic)
+            32 09 3b - conf_able (13 bytes, non-periodic)
 
             Seen in the Baker data set. Suspected to be related to manual calibration.
 
-            Only value seen: 04045a4aff000081
+            Seen:
+                32 09 3b 04 04 5a 4a ff 00 00 81 00 6e
+                32 09 3b 04 04 5a 4a ff 00 00 81 40 2e
 
-        invariants: {
-            _body: { always: "04045a4aff000081" }
-        }
 
     - 0x310938:
         name: "windmsg7"
-        length: 14
+        length: 13
+        doc: |
+
+            Seen: 31 09 38 00 36 00 00 00 43 62 20 00 37 81
+
 
     - 0x350336:
         name: "windmsg8"
-        length: 8
+        length: 7
+        doc: |
+
+            Seen: 35 03 36 37 00 0f 38
+
 
     - 0x370136:
         name: "baker_kilo"
-        length: 6
+        length: 5
         doc: |
             37 01 36 - baker_kilo (n Hz)
+            Unknown 5 byte message from the Baker data set.
 
-            Unknown 6 byte message from the Baker data set.
-
-            Always 000081.
+            Seen: 37 01 36 00 00 81
 
         invariants: {
-            _body: { always: "000081" }
+            _body: { always: "0000" }
         }
+
+    - 0x3b0338:
+        name: "april_hotel"
+        length: 7
+        doc: |
+            Unknown 7 byte frame type seen in GND10 dumps.
+
+            Seen: 3b 03 38 3f 01 15 2b 81
+
 
     - 0x3d122f:
         name: "conf_easy"
-        length: 23
+        length: 22
         doc: |
-            3d 12 2f - conf_easy (23 bytes, not periodic)
+            3d 12 2f - conf_easy (22 bytes, not periodic)
 
             Seen in the Baker data set. Strongly suspected to be related to manual calibration
             or configuration of an NX2 server.
@@ -653,17 +773,21 @@ frames:
               3d122f 2700 327b ad01 d976 a050 4c41 5400 0000 0000 c4 81
               3d122f 2700 3276 b001 797b a043 5552 523f 504f 5300 15 81
 
+              3d122f 2700 0000 0000 0000 0000 0000 0000 0000 0000 27
+              3d122f 2700 3276 b001 797b a043 5552 523f 504f 5300 15
+              3d122f 2700 327b ad01 d976 a050 4c41 5400 0000 0000 c4
+
             Observation: these are the same payloads that are seen on conf_dog/0x3e122c.
 
-              3e122c 2700 0000 0000 0000 0000 0000 0000 0000 0000 27 81
-              3e122c 2700 327b ad01 d976 a050 4c41 5400 0000 0000 c4 81
+              3e122c 2700 0000 0000 0000 0000 0000 0000 0000 0000 27
+              3e122c 2700 327b ad01 d976 a050 4c41 5400 0000 0000 c4
 
 
     - 0x3e122c:
         name: "conf_dog"
-        length: 23
+        length: 22
         doc: |
-            3e 12 2c - conf_dog (23 bytes, not periodic)
+            3e 12 2c - conf_dog (22 bytes, not periodic)
 
             (skipping _baker and _charlie in army/navy phonetics due to baker prefix already in use)
 
@@ -671,11 +795,13 @@ frames:
             or configuration of an NX2 server.
 
             Values seen:
-              3e122c 2700 0000 0000 0000 0000 0000 0000 0000 0000 27 81
-              3e122c 2700 327b ad01 d976 a050 4c41 5400 0000 0000 c4 81
-              3e122c 2700 3276 b001 797b a043 5552 523f 504f 5300 15 81
+              3e122c 2700 0000 0000 0000 0000 0000 0000 0000 0000 27
+              3e122c 2700 327b ad01 d976 a050 4c41 5400 0000 0000 c4
+              3e122c 2700 3276 b001 797b a043 5552 523f 504f 5300 15
 
     - 0x410a4b:
+        name: "baker_indian"
+        length: 14
         doc: |
             41 0a 4b - baker_indian (0.5 Hz)
 
@@ -683,10 +809,11 @@ frames:
 
             Pattern: xx00ffffffffffffffffyy81
 
+            Seen: 41 0a 4b 93 00 bf 00 f1 00 7b 00 0e 01 a9 81
+
+
             xx and yy are equal, valued 120-138.
 
-        name: "baker_indian"
-        length: 15
 
         fields: {
             xx: { index: 0, length: 1 },
@@ -701,7 +828,12 @@ frames:
 
     - 0x700373:
         name: "windmsg3"
-        length: 8
+        length: 7
+        doc: |
+
+            Seen:
+                70 03 73 89 bf 80 b6 81
+                70 03 73 89 be 80 b7 81
 
         fields: {
             xx: { index: 0, length: 2, scaling: "micro" },

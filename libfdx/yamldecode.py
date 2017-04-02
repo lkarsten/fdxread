@@ -161,7 +161,7 @@ class FDXProcess(object):
         buf = bytes()
         for ts, chunk in reader:
             buf += bytes(chunk)
-            print("buf is: %s" % fmt(buf))
+            #print("buf is: %s" % fmt(buf))
             frameidx = None
             framelen = 0
 
@@ -174,18 +174,17 @@ class FDXProcess(object):
                 if startidx == -1:
                     continue
 
-                logging.debug("needle '%s' found at idx %i" % (fmt(needle), startidx))
-#                print(fmt(buf[:5]), fmt(needle), framelen, startidx)
-                logging.debug("need %i bytes, have these %i bytes: %s" %
-                              (framelen, len(buf[startidx:]), fmt(buf[startidx:])))
+                #logging.debug("needle '%s' found at idx %i" % (fmt(needle), startidx))
+                #logging.debug("need %i bytes, have these %i bytes: %s" %
+                #              (framelen, len(buf[startidx:]), fmt(buf[startidx:])))
 
-                if len(buf[startidx+1:]) < framelen:
-                    logging.debug("need %i bytes, only have %i. Read more."
-                                  % (framelen, len(buf[startidx+1:])))
+                if len(buf[startidx+1:]) < framelen+1:
+                    #logging.debug("need %i bytes plus marker, have %i. Read more."
+                    #              % (framelen, len(buf[startidx+1:])))
                     break
 
                 if buf[startidx+framelen+1] != 0x81:
-                    logging.debug("no sync. 0x%02x != 0x81" % (buf[startidx+framelen+1]))
+                    #logging.debug("no sync. 0x%02x != 0x81" % (buf[startidx+framelen+1]))
                     continue   # No sync
 
                 frameidx = startidx
@@ -196,13 +195,15 @@ class FDXProcess(object):
             if frameidx is not None:
                 assert buf[0] == 0x81
                 if frameidx > 1:
-                    yield "junk", "%s" % buf[:frameidx]
+                    yield "junk", buf[1:frameidx]
+                # Skip the initial 0x81
                 yield "frame", buf[frameidx+1:framelen+1]
                 buf = buf[frameidx+1+framelen:]
 
-            if len(buf) > 30:  # While developing
-                raise Exception()
-                break
+            if len(buf) > 200:  # Should be suitable.
+                logging.error("buf grew, most likely stuck. Resetting to recover")
+                buf = bytes()
+
 
     def decode_frame(self, frame):
         assert isinstance(frame, bytes)
@@ -233,18 +234,22 @@ class FDXProcess_protocol(unittest.TestCase):
     def test_load(self):
         p = FDXProcess()
         p.load_yaml_handlers("../fdx.yaml")
-        print(p)
 
 class FDXProcess_line(unittest.TestCase):
     def test_line(self):
         p = FDXProcess()
         p.load_yaml_handlers("../fdx.yaml")
-        reader = nxbdump("../dumps/nexusrace_save/QuickRec.nxb")
+        #reader = nxbdump("../dumps/nexusrace_save/QuickRec.nxb")
+        reader = nxbdump("../../s044-gnd10/dumps/baker-J92-jaywalker-2017-03-04.nxb")
         #args.input, seek=args.seek, frequency=args.pace)
         flow = p.lineprotocol(reader)
-        for i in range(10):
-            mtype, frame = next(flow)
+        while True:
+            s = next(flow)
+            assert isinstance(s, tuple)
+#            print(type(s), s)
+            mtype, frame = s
             print("GOT %s: '%s'" % (mtype, fmt(frame)))
+        del reader
 
 
 class FDXProcess_frameTest(unittest.TestCase):
