@@ -25,11 +25,12 @@ import doctest
 import json
 import logging
 import unittest
+import yaml
 from binascii import hexlify
 from datetime import datetime
 from decimal import Decimal
 from math import degrees, radians, isnan
-from pprint import pprint
+from pprint import pprint, pformat
 from sys import argv, stdin, stdout, stderr
 from time import sleep, time
 from os.path import exists
@@ -101,12 +102,39 @@ class FDXProcess(object):
     handlers = {}
     headerlen = [(0x010402, 6)]
     headers = [(0x010402, 6), (0x010106, 10),]
+    messagetypes = None
 
 #    def __init__(self, protocolfile):
 #        self._build_handler(protocolfile)
 
-    def _build_handlers(self, protocolfile):
+    def load_yaml_handlers(self, protocolfile):
         assert exists(protocolfile)
+        with open(protocolfile, "r") as fp:
+            parts = yaml.load(fp.read())
+
+        i=0
+        for frametype in parts["frames"]:
+            mtype, framedata = frametype.items()[0]
+            print("0x%06X" % mtype, pformat(framedata))
+            if "length" in framedata:
+                self.headerlen += (mtype, framedata["length"])
+            elif "fields" in framedata:
+                maxoctets = 0
+                length = None
+                for field in framedata["fields"]:
+                    if field["index"] > maxoctets:
+                        maxoctets = field["index"]
+                        length = field["length"]
+                self.headerlen += (mtype, maxoctets+length)
+            else:
+                logging.warning("No length information for frame type 0x%06X" % mtype)
+                continue
+
+            i += 1
+            if i > 15:
+                break
+
+        print(self.headerlen)
 
     def lineprotocol(self, reader):
         """
@@ -173,6 +201,12 @@ class FDXProcess(object):
         keys = handler(message)
         assert len(keys) > 0
         return dict(keys)
+
+class FDXProcess_protocol(unittest.TestCase):
+    def test_load(self):
+        p = FDXProcess()
+        p.load_yaml_handlers("../fdx.yaml")
+        print(p)
 
 
 class FDXProcess_frameTest(unittest.TestCase):
