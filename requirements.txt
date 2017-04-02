@@ -7,3 +7,4 @@ nose2==0.6.5
 # for development
 #setuptools
 #twine
+pyyaml

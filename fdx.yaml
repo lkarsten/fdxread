@@ -23,10 +23,12 @@
 frames:
     - 0x000202:
         name: "emptymsg0"
+        length: 3
 
         invariants: {
             _body: { always: [0xffff0081, 0x00000081] }
         }
+
 
     - 0x010405:
         name: "wsi0"
@@ -106,6 +108,7 @@ frames:
 
     - 0x030102:
         mdesc: "emptymsg3"
+        length: 5
         doc: "TBD."
         invariants: {
             body: ["000081", "020281"]
@@ -214,35 +217,38 @@ frames:
 
     - 0x0a040e:
         name: "baker_echo"
+        length: 8
         doc: |
             0a 04 0e - baker_echo (0.5 Hz)
 
-            Unknown 9 byte message from the Baker data set.
+            Unknown 8 byte message from the Baker data set.
 
             Always 00003e023c81.
 
         invariants: {
-            body: { always: "00003e023c81" }
+            body: { always: "00003e023c" }
         }
 
     - 0x0f040b:
         name: "baker_charlie"
+        length: 8
         doc: |
             0f 04 0b - baker_charlie (1 Hz)
 
-            Unknown 9 byte frame type seen in the Baker data file.
+            Unknown 8 byte frame type seen in the Baker data file.
 
-            Always 0f 04 0b 66 53 a6 04 97 81.
+            Always 0f 04 0b 66 53 a6 04 97.
 
         invariants: {
-            body: { always: "6653a6049781" }
+            body: { always: "6653a60497" }
         }
 
 
     - 0x110213:
         name: "windstale"
+        length: 6
         doc: |
-            11 02 13 - windstale (7 bytes)
+            11 02 13 - windstale (6 bytes)
 
             Either be a WSI or GND10 artifact.
 
@@ -251,12 +257,14 @@ frames:
                 250 ffff0081
 
         invariants: {
-            body: { always: ["00000081", "ffff0081"] }
+            body: { always: ["000000", "ffff00"] }
         }
 
     - 0x120416:
         name: "wsi1"
-        length: 9
+        doc: |
+            Seen: 12 04 16 a4 04 c5 bf da
+        length: 8
 
     - 0x130211:
         name: "gpsping"
@@ -268,9 +276,9 @@ frames:
 
     - 0x150411:
         name: "gnd10msg2"
-        length: 9
+        length: 8
         doc: |
-            15 04 11 - gnd10msg2 (9 bytes, 2 Hz)
+            15 04 11 - gnd10msg2 (8 bytes, 2 Hz)
 
             In the Baker set, the values seen on 6 and 8 byte fit the sequence before
             and after, so most likely it is the same data being sent only with the
@@ -290,16 +298,17 @@ frames:
 
     - 0x170512:
         name: "static2s_two"
+        length: 9
 
         invariants: {
-            body: { always: "0080ffffff7f81" }
+            body: { always: "0080ffffff7f" }
         }
 
     - 0x1a041e:
         name: "environment"
-        length: 9
+        length: 8
         doc: |
-            1a 04 1e - environment (9 bytes, 2 Hz)
+            1a 04 1e - environment (8 bytes, 2 Hz)
             Previously: windmsg6, airpressure
 
             Present with DST200 disconnected. Not present in GND10+GPS dataset. Likely source is wind instrument.
@@ -339,7 +348,7 @@ frames:
         }
 
         invariants: {
-            _body: { always: "ffffff40bf81" },
+            _body: { always: "ffffff40bf" },
             yy: { always: "ff" },
             nul: { always: "00" }
         }
@@ -356,23 +365,23 @@ frames:
 
     - 0x1f051a:
         name: "baker_foxtrot"
-        length: 10
+        length: 9
         doc: |
             1f 05 1a - baker_foxtrot (1 Hz)
 
-            Unknown 10 byte frame type seen in the Baker data file.
+            Unknown 9 byte frame type seen in the Baker data file.
 
             Always 0000ffff000081.
         invariants: {
-            _body: { always: "0000ffff000081" }
+            _body: { always: "0000ffff0000" }
         }
 
 
     - 0x200828:
         name: "gpspos"
-        length: 13
+        length: 12
         doc: |
-            - 20 08 28 gpspos (13 bytes)
+            - 20 08 28 gpspos (12 bytes)
 
             Pattern: "20 08 28 3b xx c3 0a yy yy e0 00 zz 81"
 
@@ -397,7 +406,7 @@ frames:
             # XXX: where is the fix information? none, 2d, 3d? Where is hdop?
 
         invariants: {
-            _body: { all_nan: "00000000000010001081" }
+            _body: { all_nan: "000000000000100010" }
         }
 
         fields: {
@@ -418,7 +427,7 @@ frames:
 
     - 0x210425:
         name: "gpscog"
-        length: 9
+        length: 8
 
         fields: {
             sog: { index: 0, length: 2, scaling: "deci" },
@@ -430,11 +439,12 @@ frames:
         # cog *= 360/255.
 
         invariants: {
-            _body: { all_nan: "ffff00000081" }, # No GPS lock
+            _body: { all_nan: "ffff000000" }, # No GPS lock
         }
 
     - 0x220725:
         name: "baker_delta"
+        length: 8
         doc: |
             22 07 25 - baker_delta (1 Hz)
 
@@ -442,21 +452,22 @@ frames:
             Always 220725ffffffffffffffff81.
 
         invariants: {
-            _body: { foo: "ffffffffffffffff81" }
+            _body: { foo: "ffffffffffffffff" }
         }
 
     - 0x230526:
         name: "static2s"
+        length: 9
 
         invariants: {
-            _body: { skip: "ffff0000808081" }
+            _body: { skip: "ffff00008080" }
         }
 
     - 0x240723:
         name: "gpstime"
-        length: 12
+        length: 11
         doc: |
-            24 07 23 - gpstime (12 bytes, 1Hz update rate)
+            24 07 23 - gpstime (11 bytes, 1Hz update rate)
 
             Pattern:
             "24 07 23 0x xx xx 1b 07 18 00 yz 81".
@@ -497,16 +508,16 @@ frames:
 
         invariants: {
             year: { lt: 2150, gt: 2000 },
-            _body: { all_nan: ["ffffff00000010ef81", "ffffff00808010ef81"] },
+            _body: { all_nan: ["ffffff00000010ef", "ffffff00808010ef"] },
         }
 
     - 0x250421:
         name: "baker_juliet"
-        length: 9
+        length: 8
         doc: |
             25 04 21 - baker_juliet (0.5 Hz)
 
-            Unknown 9 byte message from the Baker data set.
+            Unknown 8 byte message from the Baker data set.
 
             Pattern: xx yy zz 00 ZZ 81
             Seen: ca0d0000c781
@@ -531,27 +542,27 @@ frames:
 
     - 0x260127:
         name: "baker_hotel"
-        length: 6,
+        length: 5
         doc: |
             26 01 27 - baker_hotel (0.5 Hz)
 
-            Unknown 6 byte message from the Baker data set.
+            Unknown 5 byte message from the Baker data set.
             Seen: c8c881
 
         invariants: {
-            _body: { always: "c8c881" }
+            _body: { always: "c8c8" }
         }
 
     - 0x270225:
         name: "baker_golf"
-        length: 7
+        length: 6
         doc: |
             27 02 25 - baker_golf (0.5 Hz)
 
-            Unknown 7 byte message from the Baker data set. Always 00ffff81.
+            Unknown 6 byte message from the Baker data set. Always 00ffff81.
 
         invariants: {
-            _body: { always: "00ffff81" },
+            _body: { always: "00ffff" },
         }
 
     - 0x2c022e:
@@ -564,11 +575,13 @@ frames:
 
     - 0x300131:
         name: "baker_lima"
-        length: 6
+        length: 5
         doc: |
             30 01 31 - baker_lima (very seldom)
 
-            Unknown 6 byte message.
+            Unknown 5 byte message.
+
+            Seen: 30 01 31 00 00 81
 
             The two body octets are equal in all observed messages.
 

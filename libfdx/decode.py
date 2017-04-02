@@ -504,7 +504,8 @@ def FDXDecode(pdu):
         if mlen < 13:
             return
         body = checklength(pdu, 13)
-        keys = intdecoder(body[48:64], width=8)
+#        keys = intdecoder(body[48:], width=8)
+        keys += intdecoder(body[48:], width=16)
 
         if strbody == "00000000000010001081":
             keys += [("elevation", float("NaN")),
@@ -522,7 +523,8 @@ def FDXDecode(pdu):
             lon = Longitude(degree=body[24:32].uintle,
                             minute=body[32:48].uintle * 0.001)
 
-            keys += [("elevation", feet2meter(body[64:72].uintle))]
+            keys += [("what", body[48:56].uintle)]
+            keys += [("elevation", body[56:72].uintle)] #  * 0.1)]
             keys += [("lat", lat), ("lon", lon)]
 
     elif mtype == 0x210425:
