@@ -96,11 +96,13 @@ def dumpreader(inputfile, seek=0):
                 seeklen += len(frame)
                 continue
 
+            ts = float(ts)
+
             yield (ts, frame)
 
-            if float(ts) < 2.0:  # The format has differential time stamps.
+            if ts < 2.0:  # The format has differential time stamps.
                 # Subsequent frames in a single read arrived without delay.
-                ts = "0.000000"
+                ts = 0.0
 
 
 if __name__ == "__main__":

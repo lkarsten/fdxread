@@ -29,9 +29,10 @@ from time import time, sleep
 
 import serial
 
-from .decode import FDXDecode, DataError, FailedAssumptionError
-from .dumpreader import dumpreader, nxbdump
+from libfdx.decode import FDXDecode, DataError, FailedAssumptionError
+from libfdx.dumpreader import dumpreader, nxbdump
 
+from libfdx.yamldecode import FDXProcess
 
 class GND10interface(object):
     stream = None
@@ -166,22 +167,27 @@ class HEXinterface(object):
         else:
             reader = dumpreader(self.inputfile, seek=self.seek)
 
-        for msg in reader:
+        fdxproc = FDXProcess("fdx.yaml")
+        line = fdxproc.lineprotocol(reader)
+
+        for msg in line:
             assert isinstance(msg, tuple)
             assert len(msg) == 2
             ts, frame = msg
 
             assert isinstance(frame, bytes)
+            if len(frame) == 0:
+                continue
             assert len(frame) > 0
 
             try:
                 fdxmsg = FDXDecode(frame)
             except (DataError, FailedAssumptionError,
                     NotImplementedError) as e:
-                if "short message" in str(e):
-                    pass
-                else:
-                    logging.warning("%s" % str(e))
+#                if "short message" in str(e):
+#                    pass
+                #else:
+                logging.warning("%s" % str(e))
                 self.n_errors += 1
             else:
                 if fdxmsg is not None:
@@ -197,3 +203,4 @@ class HEXinterface(object):
 
 if __name__ == "__main__":
     unittest.main()
+

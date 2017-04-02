@@ -95,6 +95,8 @@ def FDXDecode(pdu):
     # the whole world in one sitting.
     assert isinstance(pdu, bytes)
 
+    pdu += b'\x81'
+
     if hasattr(pdu, "hex"):
         pdu = pdu.hex()
     else:
@@ -102,6 +104,7 @@ def FDXDecode(pdu):
 
     assert isinstance(pdu, str)
     assert pdu.isalnum()
+
 
     if pdu[-2:] != '81':
         raise DataError("missing tailer")

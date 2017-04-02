@@ -38,7 +38,6 @@ from os.path import exists
 from LatLon23 import LatLon, Latitude, Longitude
 from bitstring import BitArray
 
-from dumpreader import *
 
 class DataError(Exception):
     pass
@@ -63,33 +62,6 @@ def feet2meter(feet):
     return feet * 0.3048
 
 
-def checklength(pdu, speclen):
-    "pdu is hex encoded, 4 bits per char."
-    assert type(pdu) == str
-    assert speclen is None or isinstance(speclen, int)
-
-    assert len(pdu) % 2 == 0
-
-    if speclen is not None:
-        if len(pdu)/2 != speclen:
-            raise DataError("mtype=0x%s: Incorrect length %s (got %s) body: %s"
-                            % (pdu[:3*2], speclen, len(pdu)/2, pdu[3*2:]))
-    return BitArray(hex=pdu[3*2:-1*2])
-
-def intdecoder(body, width=8, signed=False):
-    assert type(body) == BitArray
-    assert width % 8 == 0
-    assert width in [8, 16]  # for now, due to fmt.
-    fmt = "%03i"
-    if width == 16:
-        fmt = "%05i"
-
-    s = []
-    for idx in range(0, body.len, width):
-        value = body[idx:idx+width]
-        s += [fmt % (value.intle if signed else value.uintle)]
-    return [("ints", " ".join(s)), ('strbody', body.hex)]
-
 class FDXFrame(object):
     def __init__(self):
         pass
@@ -107,12 +79,10 @@ def fmt(msg):
 
 class FDXProcess(object):
     handlers = {}
-    headerlen = [(0x010402, 6)]
-    headers = [(0x010402, 6), (0x010106, 10),]
-    messagetypes = None
+    headerlen = []
 
-#    def __init__(self, protocolfile):
-#        self._build_handler(protocolfile)
+    def __init__(self, protocolfile):
+        self.load_yaml_handlers(protocolfile)
 
     def load_yaml_handlers(self, protocolfile):
         assert exists(protocolfile)
@@ -160,7 +130,9 @@ class FDXProcess(object):
         """
         buf = bytes()
         for ts, chunk in reader:
-            buf += bytes(chunk)
+            assert isinstance(ts, float)
+            assert isinstance(chunk, bytes)
+            buf += chunk
             #print("buf is: %s" % fmt(buf))
             frameidx = None
             framelen = 0
@@ -193,14 +165,15 @@ class FDXProcess(object):
                 break
 
             if frameidx is not None:
-                assert buf[0] == 0x81
+                assert buf[frameidx] == 0x81
                 if frameidx > 1:
-                    yield "junk", buf[1:frameidx]
+                    logging.debug("junk" + buf[1:frameidx].decode("ascii"))
+
                 # Skip the initial 0x81
-                yield "frame", buf[frameidx+1:framelen+1]
+                yield 0.0, buf[frameidx+1:framelen+1]
                 buf = buf[frameidx+1+framelen:]
 
-            if len(buf) > 200:  # Should be suitable.
+            if len(buf) > 1024:  # Should be suitable.
                 logging.error("buf grew, most likely stuck. Resetting to recover")
                 buf = bytes()
 
@@ -294,6 +267,7 @@ class FDXProcess_frameTest(unittest.TestCase):
 
 
 if __name__ == "__main__":
+    from libfdx.dumpreader import *
     logging.basicConfig(level=logging.DEBUG)
     doctest.testmod()
     unittest.main()
