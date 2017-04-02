@@ -1,0 +1,701 @@
+#
+# This contains the authoritative data used by the FDX parser.
+#
+# It is in YAML format, so it is simple to reuse in any programming
+# language yet human readable in its original form.
+#
+# (json did not make the cut due to the last part)
+#
+# Editor: Lasse Karstensen <lasse.karstensen@gmail.com>
+#
+# Format is roughly:
+# frames[0xaabbcc] = {"name": "foomsg0",
+#                     "doc": "multiline_string",
+#                     "skiplist": [],
+#                     "fields": {"field1": {
+#                                           "index": 1      # body octets
+#                                           "length": 0     # octets
+#                                           "name": "course_over_ground" },
+#                                           "scaling": "deci" },
+#                               {"field2": { "index: 2, length: 1, name: "bar" },
+#                     }
+
+frames:
+    - 0x000202:
+        name: "emptymsg0"
+
+        invariants: {
+            _body: { always: [0xffff0081, 0x00000081] }
+        }
+
+    - 0x010405:
+        name: "wsi0"
+        length: 9
+        doc: |
+            01 04 05 - wsi0 (9 bytes, 3 Hz)
+
+            If only GND10 (no wind or dst200), always 0xffff00000081.
+            When the wind box has crashed/browned out, the body is: ffff00000081
+
+            Doing turns and watching the AWA? counter, it does seem to follow reported AWA,
+            I think it is the right bitfield, but the scaling is wrong. Revisit.
+
+            6 or 8 byte versions of this message exists. These are ignored because they are not
+            very common (26 out of ~3400 in baker set), and the blah.has_key() logic is infectiuous
+            to the client code. A wsi0 message should always have three attributes.
+
+        fields: {
+            "AWS_hi": { index: 0, length: 2, scaling_function: "deci",
+                extra_fn: "float('NaN') if value == 2**16-1" },
+            "AWA": {index: 2, length: 2,  scaling_function: "degrees" },  # * (360.0 / 2**16)
+            "AWS_lo": {index: 4, length: 2, scaling_function: "deci" },
+        }
+
+    - 0x020301:
+        name: "dst200temp"
+        doc: |
+            02 03 01 - dst200temp (8 bytes, 5 Hz update rate)
+            Previously: dst200msg1, dst200depth2
+
+            Reduced set of distinct bodies seen when DST200 is disconnected:
+               2 '0600000681'})
+              10 '0800000881'})
+               6 '0a00000a81'})
+               4 '0c00000c81'})
+               3 '0e00000e81'})
+              44 '1015000581'})
+              56 '1016000681'})
+              25 'a90100a881'})
+             350 'ffff000081'})
+
+            Very wide set of values seen with DST200 connected. Origin most
+            likely DST200.
+
+            In no-dst200-attached dumps: "02 03 01" + "6b yy nn 6a 81", nn is
+            always zero, and yy is usually 0x00, 0x01 or 0x02.
+
+            Is there a field that defines mode in here? They come in chunks
+            of 
+            169 001 000 168
+            016 021 000 005
+            016 021 000 005 (again)
+            010 000 000 010
+            016 021 000 005 (repeats)
+
+            In the short form, the two first octets are clearly related:
+            {"ints": "246 155", "strbody": "f69b81", "xx": 246, "mode": 155, "zero": 0, "yy": 0, "rest": 0, "mdesc": "dst200temp"}
+            {"ints": "249 155", "strbody": "f99b81", "xx": 249, "mode": 155, "zero": 0, "yy": 0, "rest": 0, "mdesc": "dst200temp"}
+            {"ints": "253 155", "strbody": "fd9b81", "xx": 253, "mode": 155, "zero": 0, "yy": 0, "rest": 0, "mdesc": "dst200temp"}
+            {"ints": "000 156", "strbody": "009c81", "xx": 0, "mode": 156, "zero": 0, "yy": 0, "rest": 0, "mdesc": "dst200temp"}
+            {"cog": 245.64705882352942, "sog": 0.02, "unknown": 39, "strbody": "02008bae2781", "mdesc": "gpscog"}
+            {"ints": "001 156", "strbody": "019c81", "xx": 1, "mode": 156, "zero": 0, "yy": 0, "rest": 0, "mdesc": "dst200temp"}
+            {"ints": "001 156", "strbody": "019c81", "xx": 1, "mode": 156, "zero": 0, "yy": 0, "rest": 0, "mdesc": "dst200temp"}
+
+            (increasing from 254 155 onto 000 156 and proceeding upwards.)
+
+        length: 6   # Or 10..
+        fields: {
+            internal_temperature: { index: 0, length: 2, scaling_function: "deci" },
+            inttempC: { index: 0, length: 2, scaling_function: ["deci", "fahr2celcius"] },
+            }
+
+        invariants: {
+            pdu: ['ffff000081', '0000000081']
+        }
+
+
+    - 0x030102:
+        mdesc: "emptymsg3"
+        doc: "TBD."
+        invariants: {
+            body: ["000081", "020281"]
+        }
+
+    - 0x050207:
+        name: "baker_alpha"
+        length: 7
+        doc: |
+            05 02 07 - baker_alpha (2-3Hz)
+
+            Unknown 7 byte frame type seen in the Baker data file.
+
+            Pattern 05 02 07 xx ff yy 81
+            211 < xx < 259,
+            6 < yy < 55. usually jumps in increments of ~10.
+
+        fields: {
+            middle: { index: 1, length: 1 }
+        }
+
+        invariants: {
+            middle: { always: [0xff, 0x00] }
+        }
+
+
+    - 0x060204:
+        name: "baker_bravo"
+        length: 7
+        doc: |
+            06 02 04 - baker_bravo (n Hz)
+
+            Unknown 7 byte frame type seen in the Baker data file.
+
+            24 ff db 81
+            2d ff d2 81
+            1a ff e5 81
+            10 ff ef 81
+
+            Pattern: 06 02 04 xx ff yy 81
+
+            xx < 100
+            160 < yy < 239
+
+            Same ~10 increments as 0x050207.
+
+        fields:
+            middle: { index: 1, length: 1}
+
+        invariants: {
+            middle: { always: [0xff, 0xfe] }
+        }
+
+    - 0x070304:
+        name: "dst200depth"   # previously "dst200msg3"
+        length: 8
+
+        fields: {
+            depth: { index: 0, length: 2, scaling_function: "deci" },
+            #extra_fn: |
+            #    if depth == 2**16-1:
+            #        depth = float("NaN")
+            #    }
+            stw: { index: 2, length: 1 },  # maybe
+            unknown2: { index: 3, length: 1 },  # quality?
+        }
+
+        invariants: {
+            pdu: ['ffff000081']
+        }
+
+    - 0x080109:
+        name: "static1s"  # ex windmsg0, stalemsg0
+        length: 6
+        doc: |
+            static1s -
+
+        fields:
+            xx: { index: 0, length: 1,  }
+            yy: { index: 1, length: 1,  }
+            unknown2: { index: 3, length: 1 }  # quality?
+
+#        xx = body[0:8].uintle
+#        yy = body[8:16].uintle
+#        keys = [('xx', xx)]
+#        if xx != yy:
+#            keys += [('fault', "xx != yy (got %s, expected %s)" % (xx, yy))]
+
+    - 0x090108:
+        name: "windsignal"
+        length: 6
+        doc: |
+            foo
+
+        fields: {
+            xx: { index: 0, length: 1,  },
+            yy: { index: 1, length: 1,  }
+        }
+
+#        xx = body[0:8].uintle
+#        yy = body[8:16].uintle
+#        if xx != yy:
+#            raise FailedAssumptionError(mdesc, "xx != yy (got %s, expect %s)"
+#                                        % (xx, yy))
+#        keys = [('xx', xx)]
+
+    - 0x0a040e:
+        name: "baker_echo"
+        doc: |
+            0a 04 0e - baker_echo (0.5 Hz)
+
+            Unknown 9 byte message from the Baker data set.
+
+            Always 00003e023c81.
+
+        invariants: {
+            body: { always: "00003e023c81" }
+        }
+
+    - 0x0f040b:
+        name: "baker_charlie"
+        doc: |
+            0f 04 0b - baker_charlie (1 Hz)
+
+            Unknown 9 byte frame type seen in the Baker data file.
+
+            Always 0f 04 0b 66 53 a6 04 97 81.
+
+        invariants: {
+            body: { always: "6653a6049781" }
+        }
+
+
+    - 0x110213:
+        name: "windstale"
+        doc: |
+            11 02 13 - windstale (7 bytes)
+
+            Either be a WSI or GND10 artifact.
+
+            Always one of these two:
+              10175 00000081
+                250 ffff0081
+
+        invariants: {
+            body: { always: ["00000081", "ffff0081"] }
+        }
+
+    - 0x120416:
+        name: "wsi1"
+        length: 9
+
+    - 0x130211:
+        name: "gpsping"
+        length: 7
+
+        fields: {
+            unknown: { index: 0, length: 2 }
+        }
+
+    - 0x150411:
+        name: "gnd10msg2"
+        length: 9
+        doc: |
+            15 04 11 - gnd10msg2 (9 bytes, 2 Hz)
+
+            In the Baker set, the values seen on 6 and 8 byte fit the sequence before
+            and after, so most likely it is the same data being sent only with the
+            last data missing. Cutoff after 16+16+8 supports size estimates.
+
+            On GND10: Does not seem course-related, or boat-speed related. First 16bits alwaays around 58000, second
+            is 0xffff. Last 8 also unknown. Jumps around a lot.
+            1471711732.06 ('0x150411', 'gnd10msg2', {'rawbody': '7ce3ffff9f81', 'ints': '058236 065535 000159'})
+
+            In Baker set, second word is not 0xffff.
+
+        fields: {
+            u1: { index: 0, length: 2 },
+            u2: { index: 2, length: 2 },
+            uint8: { index: 4, length: 1 }
+        }
+
+    - 0x170512:
+        name: "static2s_two"
+
+        invariants: {
+            body: { always: "0080ffffff7f81" }
+        }
+
+    - 0x1a041e:
+        name: "environment"
+        length: 9
+        doc: |
+            1a 04 1e - environment (9 bytes, 2 Hz)
+            Previously: windmsg6, airpressure
+
+            Present with DST200 disconnected. Not present in GND10+GPS dataset. Likely source is wind instrument.
+
+            This message often arrives in a continuous chunk with the same other messages:
+            ```
+            0.029750        10      230526 ffff 0000 8080 81
+            0.000000        9       010405 9501 0d82 1b 81
+            0.000000        7       110213 0000 0081
+            0.000000        9       120416 9401 1d82 0a 81
+            0.000000        9       1a041e 9c27 ff00 44 81
+            0.000000        12      240723 0839 331b 0718 0006 81
+            0.000000        9       150411 24e1 ffff c5 81
+            ```
+            Note gnd10msg2 (0x150411) appears as well.
+
+            Pattern: 1a041e xx27 ffyy zz 81".
+                xx: values 7a..85 seen.
+                yy: values 00, 7f and 40 seen. (only)
+                zz: checksom? no clear pattern. values a2 up to df, non-continuous.
+
+            Example body: "df27 ff00 07 81"
+            Pattern seem to be: "xxxx yy zzZZ 81".
+            Does not vary a whole lot, yy is often 0xff.
+
+            xx is likely air pressure in pascals.
+            zz is a flag of sorts. 0x00, 0x40 and x07f seen.
+            ZZ seem to may be temperature in fahrenheit, when the flag is 0x00.
+
+        fields: {
+            pressure: { index: 0, length: 2, scaling: "deci" },
+            yy: { index: 2, length: 1 },
+            nul: { index: 3, length: 1 },
+            # These are not right. It is never 41 degrees celcius in Norway ;-)
+            temp_f: { index: 4, length: 1 },
+            temp_c: { index: 4, length: 1, scaling: "fahr2celcius" }
+        }
+
+        invariants: {
+            _body: { always: "ffffff40bf81" },
+            yy: { always: "ff" },
+            nul: { always: "00" }
+        }
+
+    - 0x1c031f:
+        name: "wind40s"
+        length: 8
+
+        fields: {
+            xx: { index: 0, length: 1},
+            XX: { index: 1, length: 1},
+            yy: { index: 2, length: 1}
+        }
+
+    - 0x1f051a:
+        name: "baker_foxtrot"
+        length: 10
+        doc: |
+            1f 05 1a - baker_foxtrot (1 Hz)
+
+            Unknown 10 byte frame type seen in the Baker data file.
+
+            Always 0000ffff000081.
+        invariants: {
+            _body: { always: "0000ffff000081" }
+        }
+
+
+    - 0x200828:
+        name: "gpspos"
+        length: 13
+        doc: |
+            - 20 08 28 gpspos (13 bytes)
+
+            Pattern: "20 08 28 3b xx c3 0a yy yy e0 00 zz 81"
+
+            xx moves from db..ff in dataset. _does not_ change "3b" as would be expected from 12byte message pattern.
+            yy yy - counter. 00..ff left, 8e..8f seen on right.
+            zz - checksum?
+
+            There are messages starting with the same preamble, which most likely are transmission errors:
+            ```
+            $ cut -f2- snippet2 | grep "20 08 28 3" | cut -f1 | sort -n | uniq -c | sort -rn
+               5866 13
+                 24 8
+                 15 5
+                  6 12
+            ```
+
+            If the GPS is not connected, the body is always: 0x00000000000010001081
+
+            # 3b5bc70aa5b3e0005b81
+            # lat---      what
+            #       LON---    EL
+            # XXX: where is the fix information? none, 2d, 3d? Where is hdop?
+
+        invariants: {
+            _body: { all_nan: "00000000000010001081" }
+        }
+
+        fields: {
+            lat_degrees: { index: 0, length: 1 },
+            lat_minutes: { index: 1, length: 3, scaling: "milli" },
+
+            lon_degrees: { index: 4, length: 1 },
+            lon_minutes: { index: 5, length: 3, scaling: "milli" },
+
+            elevation: { index: 8, length: 1, scaling: "feet2meter" },
+
+            unknown: { index: 9, length: 2 },
+
+            # Not implemented.
+            lat: { extra_fn: "Latitude(degree=lat_degree, minutes=lat_minutes)" },
+            lon: { extra_fn: "Longitude(degree=lot_degree, minutes=lot_minutes)" },
+        }
+
+    - 0x210425:
+        name: "gpscog"
+        length: 9
+
+        fields: {
+            sog: { index: 0, length: 2, scaling: "deci" },
+            cog: { index: 2, length: 2, scaling: "int2deg" },
+            unknown: { index: 4 }
+        }
+
+        # Scale the values.
+        # cog *= 360/255.
+
+        invariants: {
+            _body: { all_nan: "ffff00000081" }, # No GPS lock
+        }
+
+    - 0x220725:
+        name: "baker_delta"
+        doc: |
+            22 07 25 - baker_delta (1 Hz)
+
+            Unknown message from the Baker data set.
+            Always 220725ffffffffffffffff81.
+
+        invariants: {
+            _body: { foo: "ffffffffffffffff81" }
+        }
+
+    - 0x230526:
+        name: "static2s"
+
+        invariants: {
+            _body: { skip: "ffff0000808081" }
+        }
+
+    - 0x240723:
+        name: "gpstime"
+        length: 12
+        doc: |
+            24 07 23 - gpstime (12 bytes, 1Hz update rate)
+
+            Pattern:
+            "24 07 23 0x xx xx 1b 07 18 00 yz 81".
+
+            x xx xx: went from "8 38 2a" to "a 24 01" in long dumps.
+
+            It wraps after 3b, so for the byte fields only 6 of 8 bits (& 0x3b)
+            are in use. Still unknown if all 4 bits are in use in the nibble field.
+
+            Why is this MSB left, when the 13 byte example is MSB right?
+
+            y: there are 16 subsequent frames with a value of y in (0,1,2,3).
+            z: appears to be some sort of checksum. no clear pattern.
+
+            Common messages:
+              ffffff00000010ef81 (nolock1)
+              ffffff00808010ef81 (nolock2)
+
+            Flaps data alternates between nolock1 and nolock2 during startup.
+
+            If the GPS is not connected, the sequence counter keeps going up but
+            everything else is static:
+            ('0x240723', 'gpstime', {'rawbody': '0013391f0cfd00c481', 'uints':
+             '036 007 035 000 019 057 031 012 253 000 196'})
+
+        fields: {
+            hour: { index: 0, length: 1 },
+            minute: { index: 1, length: 1 },
+            second: { index: 2, length: 1 },
+            day: { index: 3, length: 1 },
+            month: { index: 4, length: 1 },
+
+            # This can't be right, can it?? :-)
+            year: { index: 5, length: 2, extra_fn: "1992 + value" },
+            unknown: { index: 6, length: 1 },
+            ts: { extra_fn: "datetime(year=year, month=month, day=day, hour=hour, minute=minute, second=second)" },
+        }
+
+        invariants: {
+            year: { lt: 2150, gt: 2000 },
+            _body: { all_nan: ["ffffff00000010ef81", "ffffff00808010ef81"] },
+        }
+
+    - 0x250421:
+        name: "baker_juliet"
+        length: 9
+        doc: |
+            25 04 21 - baker_juliet (0.5 Hz)
+
+            Unknown 9 byte message from the Baker data set.
+
+            Pattern: xx yy zz 00 ZZ 81
+            Seen: ca0d0000c781
+
+            xx jumps from 9 to 185 in one update.
+            yy moves slowly, 14 down to 9.
+            zz is 0 or 1.
+            ZZ is like xx, jumps from 3 to 199.
+
+        fields: {
+            xx: { index: 1, length: 1 },
+            yy: { index: 2, length: 1 },
+            zz: { index: 3, length: 1 },
+            nul: { index: 4, length: 1 },
+            ZZ: { index: 5, length: 1 },
+        }
+
+        # assert strbody[6:8] == "00"
+        invariants: {
+            nul: { always: "00" },
+        }
+
+    - 0x260127:
+        name: "baker_hotel"
+        length: 6,
+        doc: |
+            26 01 27 - baker_hotel (0.5 Hz)
+
+            Unknown 6 byte message from the Baker data set.
+            Seen: c8c881
+
+        invariants: {
+            _body: { always: "c8c881" }
+        }
+
+    - 0x270225:
+        name: "baker_golf"
+        length: 7
+        doc: |
+            27 02 25 - baker_golf (0.5 Hz)
+
+            Unknown 7 byte message from the Baker data set. Always 00ffff81.
+
+        invariants: {
+            _body: { always: "00ffff81" },
+        }
+
+    - 0x2c022e:
+        name: "dst200msg0"
+        length: 7
+
+    - 0x2d0528:
+        name: "service0"
+        length: 10
+
+    - 0x300131:
+        name: "baker_lima"
+        length: 6
+        doc: |
+            30 01 31 - baker_lima (very seldom)
+
+            Unknown 6 byte message.
+
+            The two body octets are equal in all observed messages.
+
+            Timing: 4 messages seen in quick succession, different data. Another 12s
+            later, then quiet for two minutes. New chunk of 4 in 2s, quiet for
+            about a minute, then one last.
+
+            In the GND10 dumps, this message appears every 16-25 minutes.
+
+            Theory: some sort of "i'm alive" or "brightness is n" broadcast?
+
+        fields: {
+            xx: { index: 0, length: 2 },
+            yy: { index: 2, length: 2 },
+        }
+
+        invariants: {
+            xx: { eq: "yy" },
+        }
+
+
+    - 0x32093b:
+        name: "conf_able"
+        length: 11
+        doc: |
+            32 09 3b - conf_able (11 bytes, non-periodic)
+
+            Seen in the Baker data set. Suspected to be related to manual calibration.
+
+            Only value seen: 04045a4aff000081
+
+        invariants: {
+            _body: { always: "04045a4aff000081" }
+        }
+
+    - 0x310938:
+        name: "windmsg7"
+        length: 14
+
+    - 0x350336:
+        name: "windmsg8"
+        length: 8
+
+    - 0x370136:
+        name: "baker_kilo"
+        length: 6
+        doc: |
+            37 01 36 - baker_kilo (n Hz)
+
+            Unknown 6 byte message from the Baker data set.
+
+            Always 000081.
+
+        invariants: {
+            _body: { always: "000081" }
+        }
+
+    - 0x3d122f:
+        name: "conf_easy"
+        length: 23
+        doc: |
+            3d 12 2f - conf_easy (23 bytes, not periodic)
+
+            Seen in the Baker data set. Strongly suspected to be related to manual calibration
+            or configuration of an NX2 server.
+
+            Values seen:
+              3d122f 2700 0000 0000 0000 0000 0000 0000 0000 0000 27 81
+              3d122f 2700 327b ad01 d976 a050 4c41 5400 0000 0000 c4 81
+              3d122f 2700 3276 b001 797b a043 5552 523f 504f 5300 15 81
+
+            Observation: these are the same payloads that are seen on conf_dog/0x3e122c.
+
+              3e122c 2700 0000 0000 0000 0000 0000 0000 0000 0000 27 81
+              3e122c 2700 327b ad01 d976 a050 4c41 5400 0000 0000 c4 81
+
+
+    - 0x3e122c:
+        name: "conf_dog"
+        length: 23
+        doc: |
+            3e 12 2c - conf_dog (23 bytes, not periodic)
+
+            (skipping _baker and _charlie in army/navy phonetics due to baker prefix already in use)
+
+            Seen in the Baker data set. Strongly suspected to be related to manual calibration
+            or configuration of an NX2 server.
+
+            Values seen:
+              3e122c 2700 0000 0000 0000 0000 0000 0000 0000 0000 27 81
+              3e122c 2700 327b ad01 d976 a050 4c41 5400 0000 0000 c4 81
+              3e122c 2700 3276 b001 797b a043 5552 523f 504f 5300 15 81
+
+    - 0x410a4b:
+        doc: |
+            41 0a 4b - baker_indian (0.5 Hz)
+
+            Unknown 15 byte message from the Baker data set.
+
+            Pattern: xx00ffffffffffffffffyy81
+
+            xx and yy are equal, valued 120-138.
+
+        name: "baker_indian"
+        length: 15
+
+        fields: {
+            xx: { index: 0, length: 1 },
+            yy: { index: 1, length: 1 },
+            middle: { index: 2, length: 2 },
+        }
+
+        invariants: {
+            middle: { skip: "ffffffffffffffff" },
+            xx: { eq: "yy" }
+        }
+
+    - 0x700373:
+        name: "windmsg3"
+        length: 8
+
+        fields: {
+            xx: { index: 0, length: 2, scaling: "micro" },
+            yy: { index: 2, length: 2, scaling: "micro" },
+        }
+
+    - 0x769e81:
+        name: "bootup0"
+        length: 3
+
