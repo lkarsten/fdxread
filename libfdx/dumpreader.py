@@ -27,7 +27,7 @@ from __future__ import print_function
 
 import logging
 
-from binascii import unhexlify
+from binascii import unhexlify, hexlify
 from sys import argv, stderr
 from os.path import exists
 from pprint import pprint
@@ -61,7 +61,6 @@ def nxbdump(nxbfile, seek=0):
 
         yield (0.0, content[lastidx:lastidx+idx+1])
         lastidx = lastidx + idx + 1
-
 
 def dumpreader(inputfile, seek=0):
     fp = open(inputfile, "r")
@@ -102,8 +101,68 @@ def dumpreader(inputfile, seek=0):
                 # Subsequent frames in a single read arrived without delay.
                 ts = "0.000000"
 
+def tokenize(reader):
+    """
+    Tokenize a data stream into frames using the 0x81 marker and
+    embedded frame length.
+    """
+    buf = bytes()
+
+    for ts, chunk in reader:
+        assert isinstance(ts, float)
+        assert isinstance(chunk, bytes)
+        buf += chunk
+        #print("buf is: %s" % hexlify(buf))
+
+        if len(buf) < 4:
+            continue
+
+        frameidx = None
+        stopidx = None
+
+        for startidx in range(0, len(buf) - 2):
+            if buf[startidx] != 0x81:  # No synchronism, skip some bytes.
+                continue
+
+            if buf[startidx:].find(b"\x81") < 0:  # No new marker means no complete messages. Read some more.
+                logging.debug("No marker in buffer, reading some more")
+                break
+
+            # Format: "\x81 sender framelen mnum <pdu> \x81"
+            # b'81120416a404c5bfda81'
+            #       ll  1122334455
+
+            framelen = int(buf[startidx+2])
+            assert framelen > 0
+            assert framelen < 255
+
+            stopidx = startidx + framelen + 5
+            if stopidx > len(buf[startidx:])-1:
+                # This framelen pointed past our buffer, so not correct. Skip until next probable.
+                continue
+
+            if 0:
+                possible_frame = buf[startidx:stopidx+1]
+                print("len=%s %s %s" % (startidx, stopidx, hexlify(possible_frame)))
+
+            if buf[stopidx] == 0x81:  # Most likely we have found a valid frame.
+                frameidx = startidx
+                break
+
+        if frameidx is not None:
+            #logging.debug("Yielding %s" % hexlify(buf[frameidx+1:stopidx]))
+            yield ts, buf[startidx+1:stopidx]
+            buf = buf[stopidx:]
+            frameidx = None
+            stopidx = None
+
+        if len(buf) > 1024:  # Should be suitable.
+            logging.error("buf grew, most likely stuck. Resetting to recover")
+            buf = bytes()
+
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.DEBUG)
     if "python" in argv:
         argv.pop(argv.index("python"))
 
@@ -112,16 +171,18 @@ if __name__ == "__main__":
         exit(1)
     savefile = argv[1]
 
+    logging.debug("Reading %s" % savefile)
+
     seek = 0
     if len(argv) == 3:
         seek = int(argv[2])
 
     if ".nxb" in savefile:
-        records = nxbdump(savefile, seek=seek)
+        reader = nxbdump(savefile, seek=seek)
     else:
-        records = dumpreader(savefile, seek=seek)
+        reader = dumpreader(savefile, seek=seek)
 
-    for ts, frame in records:
+    for ts, frame in tokenize(reader):
         try:
             print("%s\t%s" % (ts, readable(frame)))
         except IOError:
