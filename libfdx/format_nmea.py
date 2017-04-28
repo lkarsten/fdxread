@@ -142,8 +142,8 @@ class format_NMEA0183(object):
                         "B", "Barometer"),
                        ("$ZZXDR",
                         "C",
-                        "%.2f" % sample["temp_f"],
-                        "F",
+                        "%.2f" % sample.get("temp_c", 0.0),
+                        "C",
                         "TempDir")
                        ]
 
