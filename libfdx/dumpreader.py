@@ -50,7 +50,9 @@ def nxbdump(nxbfile, seek=0):
     * http://www.chicagomarineelectronics.com/NX2_FDX.htm
     """
     # Use some ram and get on with it.
-    content = open(nxbfile, "rb").read()
+    with open(nxbfile, "rb") as fp:
+        content = fp.read()
+
     assert type(content) == bytes
 
     lastidx = seek
@@ -62,46 +64,47 @@ def nxbdump(nxbfile, seek=0):
         yield (0.0, content[lastidx:lastidx+idx+1])
         lastidx = lastidx + idx + 1
 
+
 def dumpreader(inputfile, seek=0):
-    fp = open(inputfile, "r")
-    seeklen = 0
+    with open(inputfile, "r") as fp:
+        seeklen = 0
 
-    for line in fp:
-        if line.startswith("#"):
-            continue
-
-        try:
-            ts, mlen, pdu = line.split(None, 2)
-            assert len(pdu) in [3*int(mlen), int(mlen)]
-        except (ValueError, AssertionError) as e:
-            logging.warning("dumpreader(): %s: %s" % (str(e), line))
-            raise
-
-        pdu = pdu.strip()
-        pdu = pdu.replace(" ", "")
-        # Decode the hex encoding and give us bytes().
-        pdu = unhexlify(pdu)
-
-        lastidx = 0
-        while True:
-            idx = pdu[lastidx:].find(b'\x81')
-            if idx == -1:
-                break
-
-            frame = pdu[lastidx:lastidx+idx+1]
-            lastidx = lastidx + idx + 1
-
-            if seeklen < seek:
-                seeklen += len(frame)
+        for line in fp:
+            if line.startswith("#"):
                 continue
 
-            ts = float(ts)
+            try:
+                ts, mlen, pdu = line.split(None, 2)
+                assert len(pdu) in [3*int(mlen), int(mlen)]
+            except (ValueError, AssertionError) as e:
+                logging.warning("dumpreader(): %s: %s" % (str(e), line))
+                raise
 
-            yield (ts, frame)
+            pdu = pdu.strip()
+            pdu = pdu.replace(" ", "")
+            # Decode the hex encoding and give us bytes().
+            pdu = unhexlify(pdu)
 
-            if ts < 2.0:  # The format has differential time stamps.
-                # Subsequent frames in a single read arrived without delay.
-                ts = 0.0
+            lastidx = 0
+            while True:
+                idx = pdu[lastidx:].find(b'\x81')
+                if idx == -1:
+                    break
+
+                frame = pdu[lastidx:lastidx+idx+1]
+                lastidx = lastidx + idx + 1
+
+                if seeklen < seek:
+                    seeklen += len(frame)
+                    continue
+
+                ts = float(ts)
+
+                yield (ts, frame)
+
+                if ts < 2.0:  # The format has differential time stamps.
+                    # Subsequent frames in a single read arrived without delay.
+                    ts = 0.0
 
 def tokenize(reader):
     """
