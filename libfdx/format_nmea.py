@@ -53,8 +53,8 @@ def nmeapos(pos):
 
 class format_NMEA0183(object):
     def __init__(self):
-        gpstime = None
-        gpspos = None
+        self.gpstime = None
+        self.gpspos = None
 
     def handle(self, sample):
         assert type(sample) == dict
