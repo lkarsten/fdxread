@@ -43,7 +43,7 @@ def readable(s, sep=" "):
 
 def nxbdump(nxbfile, seek=0):
     """
-    Scan save files (.nxb) from Nexus Race and output the bitstream.
+    Scan save files (.nxb) from Nexus Race and output the bytestream.
 
     References:
     * http://www.nexusmarine.se/support/info-and-reg-nexus-software/software-download/
