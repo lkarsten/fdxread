@@ -52,11 +52,9 @@ def nmeapos(pos):
 
 
 class format_NMEA0183(object):
-    gpstime = None
-    gpspos = None
-
-    def __init__(self, joinlines=True):
-        self.joinlines = joinlines
+    def __init__(self):
+        gpstime = None
+        gpspos = None
 
     def handle(self, sample):
         assert type(sample) == dict
@@ -160,18 +158,19 @@ class format_NMEA0183(object):
             cksum = reduce(xor, (ord(s) for s in sentence[1:]))
             completed.append("%s*%02X" % (sentence, cksum))
 
-        if completed and self.joinlines:
-            s = r""
-            for i, line in enumerate(completed):
-                s += line + "\r\n"
-            return s
-        else:
-            return completed or None
+        if len(completed) == 0:
+            return None
+
+        # NMEA0183 uses \r\n as line separator even on Unix systems.
+        s = ""
+        for line in completed:
+            s = s + line + "\r\n"
+        return s
 
 
 class TestNMEA0183(unittest.TestCase):
     def test_gps(self):
-        formatter = format_NMEA0183(joinlines=False)
+        formatter = format_NMEA0183()
         r = formatter.handle({"mdesc": "gpspos",
                               "lat": 54.10246, "lon": 10.8079})
         assert r is None   # Should be empty.
@@ -181,13 +180,13 @@ class TestNMEA0183(unittest.TestCase):
 
         r = formatter.handle({"mdesc": "gpscog", "sog": 0.16,
                               "cog": 344.47058823529414})
-        assert len(r) == 2
+        assert isinstance(r, str)
+        lines = r.split()
+        assert len(lines) == 2
 
-        assert r[0] == '$GPRMC,191655,A,5406.15,N,1048.47,E,0.16,344.47,120117,0.0,E*47'
-        assert r[1] == '$GPHDT,344.47,T*05'
+        assert lines[0] == '$GPRMC,191655,A,5406.15,N,1048.47,E,0.16,344.47,120117,0.0,E*47'
+        assert lines[1] == '$GPHDT,344.47,T*05'
 
-    def test_joining(self):
-        formatter = format_NMEA0183(joinlines=True)
         msg = {"mdesc": "environment", "airpressure": 101.42, "temp_c": 21.0}
         r = formatter.handle(msg)
         assert isinstance(r, str)

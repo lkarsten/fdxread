@@ -65,7 +65,7 @@ def main():
 
     args.format = args.format.lower()
     if args.format == "nmea0183":
-        fmter = libfdx.format_NMEA0183(joinlines=True)
+        fmter = libfdx.format_NMEA0183()
     elif args.format == "json":
         fmter = libfdx.format_json(devmode=False)
     elif args.format == "raw":
@@ -99,7 +99,7 @@ def main():
         if fmter:
             output = fmter.handle(buf)
             if output:
-                print(output)
+                stdout.write(output)
                 stdout.flush()
 
 if __name__ == "__main__":

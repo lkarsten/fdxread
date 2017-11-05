@@ -30,6 +30,7 @@ from operator import xor
 from math import radians, degrees
 from pprint import pprint, pformat
 from sys import argv, stdin, stdout, stderr
+from os import linesep
 
 from LatLon23 import LatLon, Latitude, Longitude
 
@@ -48,6 +49,18 @@ def knots2m(knots):
     """
     return knots * (1852.0/3600)
 
+# Original from https://stackoverflow.com/questions/11875770/
+def json_serial(obj):
+    """JSON serializer for objects not serializable by default json code"""
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    elif isinstance(obj, Decimal):
+        return "{0:.3}".format(obj)
+    elif isinstance(obj, Latitude):
+        return float(obj.to_string("D"))
+    elif isinstance(obj, Longitude):
+        return float(obj.to_string("D"))
+    raise TypeError("Type %s not serializable" % type(obj))
 
 class format_signalk_delta(object):
     """
@@ -76,21 +89,9 @@ class format_signalk_delta(object):
             if isinstance(s["utctime"], datetime):
                 r += [("navigation.datetime.value", s["utctime"].isoformat())]
 
-        return dict(r)
+        return json.dumps(r, default=json_serial) + linesep
 
 
-# Original from https://stackoverflow.com/questions/11875770/
-def json_serial(obj):
-    """JSON serializer for objects not serializable by default json code"""
-    if isinstance(obj, datetime):
-        return obj.isoformat()
-    elif isinstance(obj, Decimal):
-        return "{0:.3}".format(obj)
-    elif isinstance(obj, Latitude):
-        return float(obj.to_string("D"))
-    elif isinstance(obj, Longitude):
-        return float(obj.to_string("D"))
-    raise TypeError("Type %s not serializable" % type(obj))
 
 
 class format_json(object):
@@ -126,33 +127,33 @@ class format_json(object):
             del s["mdesc"]
             return "%s\t%s" % (mdesc, json.dumps(s, default=json_serial))
 
-        return json.dumps(s, default=json_serial)
+        return json.dumps(s, default=json_serial) + linesep
 
 
 class TestFormatters(unittest.TestCase):
-    def un_isotime(self, s):
-        assert isinstance(s, str)
-        return datetime.strptime(s, "%Y-%m-%dT%H:%M:%S")
-
     def test_sk(self):
+        def un_isotime(s):
+            assert isinstance(s, str)
+            return datetime.strptime(s, "%Y-%m-%dT%H:%M:%S")
         formatter = format_signalk_delta()
+
         r = formatter.handle({"mdesc": "gpspos",
                               "lat": 54.102466, "lon": 10.8079})
-        self.assertAlmostEqual(r['navigation.position.longitude'], 10.8079)
+        assert isinstance(r, str)
+        assert r.endswith("\n")
 
-        r = formatter.handle({"utctime": self.un_isotime("2017-01-12T19:16:55"),
+        self.assertTrue('["navigation.position.latitude", 54.102466]' in r)
+
+        r = formatter.handle({"utctime": un_isotime("2017-01-12T19:16:55"),
                               "mdesc": "gpstime"})
-        assert r == {'navigation.datetime.value': '2017-01-12T19:16:55'}
-
-        if 0:
-            r = formatter.handle({"mdesc": "gpscog", "sog": 0.16, "cog": 344.47})
-            pprint(r)
+        self.assertTrue('"navigation.datetime.value", "2017-01-12T19:16:55"]' in r)
 
     def test_json(self):
         formatter = format_json()
         msg = {"mdesc": "environment", "airpressure": 101.42, "temp_c": 21.0}
         r = formatter.handle(msg)
         assert isinstance(r, str)
+        assert r.endswith("\n")
         assert json.loads(r)
 
 
