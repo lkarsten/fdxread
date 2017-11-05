@@ -136,7 +136,7 @@ class format_json(object):
         if self.devmode:
             mdesc = s["mdesc"]
             del s["mdesc"]
-            return "%s\t%s" % (mdesc, json.dumps(s, default=json_serial))
+            return "%s\t%s" % (mdesc, json.dumps(s, default=json_serial)) + linesep
 
         return json.dumps(s, default=json_serial) + linesep
 
