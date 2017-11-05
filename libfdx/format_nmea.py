@@ -161,9 +161,12 @@ class format_NMEA0183(object):
             completed.append("%s*%02X" % (sentence, cksum))
 
         if completed and self.joinlines:
-            completed = "\r\n".join(completed)
-
-        return completed or None
+            s = r""
+            for i, line in enumerate(completed):
+                s += line + "\r\n"
+            return s
+        else:
+            return completed or None
 
 
 class TestNMEA0183(unittest.TestCase):
@@ -188,7 +191,7 @@ class TestNMEA0183(unittest.TestCase):
         msg = {"mdesc": "environment", "airpressure": 101.42, "temp_c": 21.0}
         r = formatter.handle(msg)
         assert isinstance(r, str)
-        assert r == "$ZZXDR,P,101.42000,B,Barometer*21\r\n$ZZXDR,C,21.00,C,TempDir*10"
+        assert r == "$ZZXDR,P,101.42000,B,Barometer*21\r\n$ZZXDR,C,21.00,C,TempDir*10\r\n"
 
 
 if __name__ == "__main__":
