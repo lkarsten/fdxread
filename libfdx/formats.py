@@ -49,6 +49,7 @@ def knots2m(knots):
     """
     return knots * (1852.0/3600)
 
+
 # Original from https://stackoverflow.com/questions/11875770/
 def json_serial(obj):
     """JSON serializer for objects not serializable by default json code"""
@@ -62,13 +63,18 @@ def json_serial(obj):
         return float(obj.to_string("D"))
     raise TypeError("Type %s not serializable" % type(obj))
 
+
 class format_signalk_delta(object):
     """
     Translation between our internal format and Signal K
     delta format.
     """
+    def __init__(self):
+        self.gpstime = None
+
     def handle(self, s):
-        assert type(s) == dict
+        assert isinstance(s, dict)
+
         r = []
         if s["mdesc"] == "wsi0":
             r += [('environment.wind.angleApparent', radians(s["awa"]))]
@@ -88,10 +94,15 @@ class format_signalk_delta(object):
         elif s["mdesc"] == "gpstime":
             if isinstance(s["utctime"], datetime):
                 r += [("navigation.datetime.value", s["utctime"].isoformat())]
+                self.gpstime = s["utctime"]
 
-        return json.dumps(r, default=json_serial) + linesep
+        if len(r) == 0:
+            return None
 
-
+        return json.dumps({"updates": {"timestamp": self.gpstime,
+                                       "source": "fdxread",
+                                       "values": [{"path": k, "value": v} for k, v in r]}},
+                           default=json_serial) + linesep
 
 
 class format_json(object):
@@ -137,16 +148,15 @@ class TestFormatters(unittest.TestCase):
             return datetime.strptime(s, "%Y-%m-%dT%H:%M:%S")
         formatter = format_signalk_delta()
 
-        r = formatter.handle({"mdesc": "gpspos",
-                              "lat": 54.102466, "lon": 10.8079})
+        r = formatter.handle({"utctime": un_isotime("2017-01-12T19:16:55"), "mdesc": "gpstime"})
         assert isinstance(r, str)
         assert r.endswith("\n")
 
-        self.assertTrue('["navigation.position.latitude", 54.102466]' in r)
-
-        r = formatter.handle({"utctime": un_isotime("2017-01-12T19:16:55"),
-                              "mdesc": "gpstime"})
-        self.assertTrue('"navigation.datetime.value", "2017-01-12T19:16:55"]' in r)
+        r = formatter.handle({"mdesc": "gpspos", "lat": 54.102466, "lon": 10.8079})
+        assert isinstance(r, str)
+        assert r.endswith("\n")
+        msg = json.loads(r)
+        self.assertAlmostEqual(msg["updates"]["values"][0]["value"], 54.102466)
 
     def test_json(self):
         formatter = format_json()
