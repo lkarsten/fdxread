@@ -36,6 +36,8 @@ from time import sleep, time
 from LatLon23 import LatLon, Latitude, Longitude
 #from bitstring import BitArray
 
+from utils import hexlify_sep, unhexlify_sep
+
 def fahr2celcius(temp):
     assert type(temp) in [float, int]
     assert temp < 150
@@ -46,7 +48,6 @@ def feet2meter(feet):
     assert type(feet) in [float, int]
     assert feet >= 0
     return feet * 0.3048
-
 
 def uintle(n):
     #print(type(i), dir(i), i)
@@ -151,21 +152,12 @@ handler[0x20] = ("gpspos", 12, (("lat_degree", 0, 1, (uintle,)), ("lat_minute", 
     If the GPS is not connected, the body is always: 0x00000000000010001081""")
 
 
-def only_utctime(fdxmsg):
-    if fdxmsg["year"] > 3000:
-        return {"utctime": float('nan')}
+def compose_header(obj):
+    return struct.pack("<BBB", obj.mtype, obj.mlen, 0x23)
+    #return struct.pack("<BBB", obj.mtype, obj.mlen, 0xff)
 
-    return {"utctime": datetime(**fdxmsg)}
-
-
-handler[0x24] = ("gpstime", 11, (("hour", 0, 1, (uintle,)), ("minute", 1, 1, (uintle,)),
-                               ("second", 2, 1, (uintle,)), ("day", 3, 1, (uintle,)),
-                               ("month", 4, 1, (uintle,)), ("year", 5, 2, (uintle, lambda x: x+1992)),
-                               # unknown: { index: 6, length: 1 },
-                             ),
-                             only_utctime,
+class GpsTime(object):
     """24 07 23 - gpstime (1Hz update rate)
-
     Pattern:
     "24 07 23 0x xx xx 1b 07 18 00 yz 81".
 
@@ -190,7 +182,65 @@ handler[0x24] = ("gpstime", 11, (("hour", 0, 1, (uintle,)), ("minute", 1, 1, (ui
     everything else is static:
     ('0x240723', 'gpstime', {'rawbody': '0013391f0cfd00c481', 'uints':
      '036 007 035 000 019 057 031 012 253 000 196'})
-""")
+"""
+    mtype = 0x24
+    mlen = 0x7
+
+    def __init__(self):
+        self.hour = float("NaN")
+        self.minute = float("NaN")
+        self.second = float("NaN")
+
+        self.day = float("NaN")
+        self.month = float("NaN")
+        self.year = float("NaN")
+
+    def __repr__(self):
+        return "<GpsTime %4s-%02g-%02g %02g:%02g:%02g>" % \
+               (self.year, self.month, self.day,
+                self.hour, self.minute, self.second)
+
+    @classmethod
+    def from_datetime(cls, dt):
+        obj = cls()
+        assert isinstance(dt, datetime)
+        for key in ["hour", "minute", "second", "year", "month", "day"]:
+            setattr(obj, key, getattr(dt, key))
+        return obj
+
+    @classmethod
+    def unpack(cls, sentence):
+        assert isinstance(sentence, bytes)
+        obj = cls()
+        #print(hexlify_sep(sentence), "  ", len(sentence))
+        assert len(sentence) == obj.mlen + 5
+        obj.hour, obj.minute, obj.second, obj.day, obj.month = struct.unpack("<BBBBB", sentence[3:8])
+        year = struct.unpack("<H", sentence[8:10])[0]
+        obj.year = year + 1992
+        assert obj.year < 3000
+        assert obj.year > 1992
+
+        #self.unknown = sentence[10:11]
+        return obj
+
+    def to_datetime(self):
+        if isnan(self.hour):
+            raise ValueError("not initialized")
+        return datetime(year=self.year, month=self.month, day=self.day,
+                        hour=self.hour, minute=self.minute, second=self.second)
+
+    def pack(self):
+        if isnan(self.hour):
+            raise AttributeError("not initialized")
+
+        fdx = compose_header(self)
+        fdx += struct.pack("<BBBBB", self.hour, self.minute, self.second, self.day, self.month)
+        fdx += struct.pack("<H", self.year-1992)
+        fdx += struct.pack("<B", 0xff)  # No idea
+        fdx += b'\x81'
+        #print(hexlify_sep(fdx))
+        return fdx
+
 
 handler[0x21] = ("gpscog", 8, (("sog", 0, 2, (nan_uintle, deci)),
 			       ("cog", 3, 1, (nan_uintle, degree8))),
@@ -262,14 +312,8 @@ class FDXMessage(object):
 
         self.fdxmsg["mdesc"] = mdef[0]
 
+_b = unhexlify_sep
 
-def _b(s):
-    assert isinstance(s, str)
-    if " " in s:
-        s = s.replace(" ", "")
-    s = unhexlify(s)
-    assert s[1] + 5 == len(s)   # Small sanity check
-    return s
 
 
 class FDXDecodeTest(unittest.TestCase):
@@ -308,6 +352,24 @@ class FDXDecodeTest(unittest.TestCase):
 
         r = FDXMessage(_b("240723fffffffffffff8f881"))
         assert isnan(r.fdxmsg["utctime"])
+
+
+class TypeTests(unittest.TestCase):
+    def test_gpstime(self):
+        cmp_fmt = "%Y-%m-%d__%H:%M:%s"
+        sample_message = unhexlify_sep("24 07 23 11 26 1f 0f 08 18 00 ff 81")
+
+        t = GpsTime()
+        del t
+
+        # datetime constructor
+        then = datetime.now()
+        then_gpstime = GpsTime.from_datetime(then)
+        assert then.strftime(cmp_fmt) == then_gpstime.to_datetime().strftime(cmp_fmt)
+
+        # fdx constructor
+        gpstime_fdx = GpsTime.unpack(sample_message)
+        self.assertEqual(sample_message, gpstime_fdx.pack())
 
 
 if __name__ == "__main__":
