@@ -199,7 +199,12 @@ handler[0x21] = ("gpscog", 8, (("sog", 0, 2, (nan_uintle, deci)),
                0x210425:
                """)
 
-handler[0xff] = ("default_handler", None, tuple(), lambda x: logging.warning("No handler"))
+def default(self):
+    logging.warning("No handler")
+    return self
+
+handler[0xff] = ("default_handler", None, tuple(), default)
+
 
 class ParseError(Exception):
     pass
