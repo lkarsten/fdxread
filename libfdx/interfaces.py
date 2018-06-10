@@ -27,13 +27,10 @@ from datetime import datetime
 from pprint import pprint
 from time import time, sleep
 
-import serial
+from .decode import DataError, FailedAssumptionError
+from .newdecoder import FDXMessage, ParseError
 
-from .decode import FDXDecode, DataError, FailedAssumptionError
-from .dumpreader import dumpreader, nxbdump
-
-
-class GND10interface(object):
+class SerialInterface(object):
     stream = None
     n_msg = 0
     n_errors = 0
@@ -56,6 +53,7 @@ class GND10interface(object):
     def open(self):
         logging.debug("Opening serial port %s (read_timeout=%s)" % (self.serialport,
                       self.read_timeout))
+        import serial
         self.stream = serial.Serial(port=self.serialport,
                                     timeout=self.read_timeout)
         assert self.stream is not None
@@ -69,7 +67,7 @@ class GND10interface(object):
                 pass
         self.stream = None
 
-    def recvmsg(self):
+    def readline(self):
         buf = bytes()
         empty_reads = 0
 
@@ -123,14 +121,11 @@ class GND10interface(object):
             if b'\x81' in buf:
                 # print("trying to decode %i bytes: %s" % (len(buf), buf.hex()))
                 try:
-                    fdxmsg = FDXDecode(buf)
-                except (DataError, FailedAssumptionError,
+                    fdxmsg = FDXMessage(buf)
+                except (ParseError, DataError, FailedAssumptionError,
                         NotImplementedError) as e:
-                    if "short message" in str(e):
-                        pass
-                    else:
-                        # This class concerns itself with the readable only.
-                        logging.warning("Ignoring exception: %s" % str(e))
+                    # This class concerns itself with the readable only.
+                    logging.warning("Ignoring exception: %s" % str(e))
                     self.n_errors += 1
                 else:
                     if fdxmsg is not None:
@@ -142,13 +137,8 @@ class GND10interface(object):
                 buf = bytes()
 
 
-class HEXinterface(object):
-    """
-    Used for running with test data when the GND10 is not
-    connected.
-
-    Interface should be close to GND10interface().
-    """
+class FileInterface(object):
+    "Generate a set of FDXMessage-s from test data in files."
     last_yield = None
     n_msg = 0
     n_errors = 0
@@ -160,7 +150,8 @@ class HEXinterface(object):
         with open(self.inputfile):
             pass  # Catch permission problems early.
 
-    def recvmsg(self):
+    def readline(self):
+        from .dumpreader import dumpreader, nxbdump
         if self.inputfile.endswith(".nxb"):
             reader = nxbdump(self.inputfile, seek=self.seek)
         else:
@@ -175,24 +166,21 @@ class HEXinterface(object):
             assert len(frame) > 0
 
             try:
-                fdxmsg = FDXDecode(frame)
-            except (DataError, FailedAssumptionError,
+                fdxmsg = FDXMessage(frame)
+            except (ParseError, DataError, FailedAssumptionError,
                     NotImplementedError) as e:
-                if "short message" in str(e):
-                    pass
-                else:
-                    logging.warning("%s" % str(e))
+                logging.warning(str(e))
                 self.n_errors += 1
-            else:
-                if fdxmsg is not None:
-                    self.n_msg += 1
-                    self.last_yield = time()
-                    assert isinstance(fdxmsg, dict)
-                    yield fdxmsg
+                continue
 
-                    # Pace the output.
-                    if self.frequency is not None:
-                        sleep(1.0/self.frequency)
+            self.n_msg += 1
+            self.last_yield = time()
+            assert isinstance(fdxmsg.fdxmsg, dict)
+            yield fdxmsg.fdxmsg
+
+            # Pace the output.
+            if self.frequency is not None:
+                sleep(1.0/self.frequency)
 
 
 if __name__ == "__main__":

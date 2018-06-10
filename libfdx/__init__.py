@@ -2,7 +2,7 @@
 # libfdx is versioned identically as fdxread.
 __version__= "0.9.1"
 
-from .interfaces import GND10interface, HEXinterface
+from .interfaces import SerialInterface, FileInterface
 from .decode import FDXDecode, DataError, FailedAssumptionError
 
 from .formats import format_signalk_delta, format_json

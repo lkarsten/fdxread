@@ -83,14 +83,14 @@ def main():
 
     if exists(args.input):
         if args.input.startswith("/dev"):
-            reader = libfdx.GND10interface(args.input, send_modechange=args.send_psilfdx)
+            reader = libfdx.SerialInterface(args.input, send_modechange=args.send_psilfdx)
         else:
-            reader = libfdx.HEXinterface(args.input, seek=args.seek, frequency=args.pace)
+            reader = libfdx.FileInterface(args.input, seek=args.seek, frequency=args.pace)
     else:
         print("ERROR: Don't know how to read or open %s" % args.input)
         exit(1)
 
-    for buf in reader.recvmsg():
+    for buf in reader.readline():
         if buf is None:
             logging.debug("empty decoded frame")
             continue
