@@ -14,13 +14,11 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
-# Copyright (C) 2017 Lasse Karstensen
+# Copyright (C) 2017-2018 Lasse Karstensen
 #
 """
 FDX decoder
 """
-from __future__ import print_function
-
 import doctest
 import json
 import logging
@@ -87,7 +85,6 @@ def degree16(n):
         return float('nan')
     return n * 360/(2**16)-1
 
-
 def deci(i):
     return i * 0.01
 
@@ -97,9 +94,9 @@ def milli(i):
 
 # ('msgname', length, fields, finalfunc, 'docstring')
 # fields == ((field1, index, size, [castfns]), (field2, ..), ..)
-mtype = [None] * 0xff
-#mtype[0x00] = ("emptymsg0", 2, (, ), "undocumented")
-mtype[0x01] = ("wsi0", 8, (("windspeed", 0, 2, (nan_uintle, deci)),
+handler = {}
+#handler[0x00] = ("emptymsg0", 2, (, ), "undocumented")
+handler[0x01] = ("wsi0", 8, (("windspeed", 0, 2, (nan_uintle, deci)),
                            ("awa", 4, 2, (nan_uintle, degree16)),
                            ('aws_lo', 4, 2, (nan_uintle, deci)),
                            ('aws_hi', 4, 2, (uintle, Decimal)),
@@ -113,12 +110,12 @@ mtype[0x01] = ("wsi0", 8, (("windspeed", 0, 2, (nan_uintle, deci)),
     I think it is the right bitfield, but the scaling is wrong. Revisit.
     """)
 
-mtype[0x07] = ("dst200depth", 7, (("depth", 0, 2, (nan_uintle, deci)),
+handler[0x07] = ("dst200depth", 7, (("depth", 0, 2, (nan_uintle, deci)),
                                   ("stw", 2, 2, (nan_uintle,)),   # maybe
                                   ("_unknown", 4, 1, (uintle,)) # quality?
                                  ), None,
     """
-    mtype[0x070304:
+    handler[0x070304:
         mdesc = "dst200depth"   # previously "dst200msg3"
         if strbody in ['ffff000081']:
             return
@@ -138,7 +135,7 @@ def condense_position(fdxmsg):
         fdxmsg["lon"] = float('NaN')
     return fdxmsg
 
-mtype[0x20] = ("gpspos", 12, (("lat_degree", 0, 1, (uintle,)), ("lat_minute", 1, 2, (uintle, milli)),
+handler[0x20] = ("gpspos", 12, (("lat_degree", 0, 1, (uintle,)), ("lat_minute", 1, 2, (uintle, milli)),
                               ("lon_degree", 3, 1, (uintle,)), ("lon_minute", 4, 2, (uintle, milli,)),
                               ("elevation", 8, 1, (uintle, feet2meter)),
                               #unknown: { index: 9, length: 2 },
@@ -161,7 +158,7 @@ def only_utctime(fdxmsg):
     return {"utctime": datetime(**fdxmsg)}
 
 
-mtype[0x24] = ("gpstime", 11, (("hour", 0, 1, (uintle,)), ("minute", 1, 1, (uintle,)),
+handler[0x24] = ("gpstime", 11, (("hour", 0, 1, (uintle,)), ("minute", 1, 1, (uintle,)),
                                ("second", 2, 1, (uintle,)), ("day", 3, 1, (uintle,)),
                                ("month", 4, 1, (uintle,)), ("year", 5, 2, (uintle, lambda x: x+1992)),
                                # unknown: { index: 6, length: 1 },
@@ -195,66 +192,66 @@ mtype[0x24] = ("gpstime", 11, (("hour", 0, 1, (uintle,)), ("minute", 1, 1, (uint
      '036 007 035 000 019 057 031 012 253 000 196'})
 """)
 
-mtype[0x21] = ("gpscog", 8, (("sog", 0, 2, (nan_uintle, deci)),
+handler[0x21] = ("gpscog", 8, (("sog", 0, 2, (nan_uintle, deci)),
 			     ("cog", 3, 1, (nan_uintle, degree8))),
                             None,
  	       """
                0x210425:
                """)
 
-def FDXMessage(msg):
+handler[0xff] = ("default_handler", None, tuple(), lambda x: logging.warning("No handler"))
+
+class ParseError(Exception):
+    pass
+
+class FDXMessage(object):
     """
-    Decode the contents of an FDX message using the structure defined in `mtype`.
+    Decode the contents of an FDX message using the structure defined in `handler`.
     """
-    assert isinstance(msg, bytes)
-    if 1:
-        print("Raw message for decoding is: %s" % hexlify(msg))
+    def __init__(self, msg):
+        assert isinstance(msg, bytes)
+        if 1:
+            print("Raw message for decoding is: %s" % hexlify(msg))
+        assert msg[-1] == 0x81
 
-    mdef = mtype[msg[0]]
-    if mdef is None:
-        logging.info("No handler for mtype=%02x" % msg[0])
-        return
+        if msg[1] > 75:  # Arbitrary
+            raise ParseError("Suspiciously long message: %s" % hexlify(msg))
 
-    assert msg[-1] == 0x81
+        mdef = handler.get(msg[0], handler[0xff])
+        mtype, mlength, attrlist = mdef[:3]
 
-    if msg[1] > 75:  # Arbitrary
-        logging.error("Skipping suspiciously long message: %s" % hexlify(msg))
-        return
+        if mlength and msg[1] != mlength - 4:
+                raise ParseError("Incorrect size on message: %s" % hexlify(msg))
+    #    assert msg[1] == mdef[1] - 4   # Keep the mdef correct for a future lexer.
 
-    if msg[1] != mdef[1] -4:
-        logging.error("Incorrect size on message: %s" % hexlify(msg))
-        return
+        self.fdxmsg = {}
 
-#    assert msg[1] == mdef[1] - 4   # Keep the mdef correct for a future lexer.
-    fdxmsg = {}
+        for name, b, sz, fnlist in attrlist:
+            assert isinstance(fnlist, tuple)
+            assert len(fnlist) > 0
+            if 0:
+                print("%s %s: " % (mdef[0], name))
 
-    for name, b, sz, fnlist in mdef[2]:
-        assert isinstance(fnlist, tuple)
-        assert len(fnlist) > 0
-        if 0:
-            print("%s %s: " % (mdef[0], name))
+            b += 3 # Skip the 3 byte header
+            value = msg[b:b+sz]
 
-        b += 3 # Skip the 3 byte header
-        value = msg[b:b+sz]
+            if 0:
+                print("%s %s: " % (mdef[0], name))
+                print(str(fnlist))
+                #print(type(value), hexlify(value))
 
-        if 0:
-            print("%s %s: " % (mdef[0], name))
-            print(str(fnlist))
-            #print(type(value), hexlify(value))
+            for fn in fnlist:
+                print("%s %s: Calling %s(%s)" % (mdef[0], name, fn, str(value)))
+                value = fn(value)
 
-        for fn in fnlist:
-            #print("%s %s: Calling %s(%s)" % (mdef[0], name, fn, str(value)))
-            value = fn(value)
+            if value != msg[b:b+sz]:
+                self.fdxmsg[name] = value
 
-        if value != msg[b:b+sz]:
-            fdxmsg[name] = value
+        if callable(mdef[3]):
+            logging.debug("Final function: %s(%s)" % (mdef[3], self.fdxmsg))
+            self.fdxmsg = mdef[3](self.fdxmsg)
 
-    if callable(mdef[3]):
-        # logging.debug("Final function: %s(%s)" % (mdef[3], fdxmsg))
-        fdxmsg = mdef[3](fdxmsg)
-
-    fdxmsg["mdesc"] = mdef[0]
-    return fdxmsg
+        self.fdxmsg["mdesc"] = mdef[0]
 
 
 def _b(s):
@@ -265,42 +262,43 @@ def _b(s):
     assert s[1] + 5 == len(s)   # Small sanity check
     return s
 
+
 class FDXDecodeTest(unittest.TestCase):
     def test_simple(self):
         r = FDXMessage(_b("24 07 23 0f 1b 17 11 08 18 00 02 81"))
-        assert isinstance(r["utctime"], datetime)
-        assert r["utctime"].isoformat() == "2016-08-17T15:27:23"
+        assert isinstance(r.fdxmsg["utctime"], datetime)
+        assert r.fdxmsg["utctime"].isoformat() == "2016-08-17T15:27:23"
 
     def test_gps_position(self):
         r = FDXMessage(_b("20 08 28 00 00 00 00 00 00 10 00 10 81"))  # No lock
-        self.assertEqual(r["mdesc"], "gpspos")
-        assert isnan(r["lat"])
-        assert isnan(r["lon"])
+        self.assertEqual(r.fdxmsg["mdesc"], "gpspos")
+        assert isnan(r.fdxmsg["lat"])
+        assert isnan(r.fdxmsg["lon"])
 
         r = FDXMessage(_b("20 08 28 3b 21 c3 0a ff 8e e0 00 42 81"))  # Position
-        self.assertEqual(r["mdesc"], "gpspos")
-        assert isinstance(r["lat"], Latitude)
-        assert isinstance(r["lon"], Longitude)
-        self.assertAlmostEqual(float(r["lat"].to_string("D")), 59.83255)
-        self.assertAlmostEqual(float(r["lon"].to_string("D")), 10.6101166667)
+        self.assertEqual(r.fdxmsg["mdesc"], "gpspos")
+        assert isinstance(r.fdxmsg["lat"], Latitude)
+        assert isinstance(r.fdxmsg["lon"], Longitude)
+        self.assertAlmostEqual(float(r.fdxmsg["lat"].to_string("D")), 59.83255)
+        self.assertAlmostEqual(float(r.fdxmsg["lon"].to_string("D")), 10.6101166667)
 
     def test_gps_cogsog(self):
         r = FDXMessage(_b("21 04 25 ff ff 00 00 00 81"))  # No lock
-        self.assertEqual(r["mdesc"], "gpscog")
-        assert isnan(r["cog"])
-        assert isnan(r["sog"])
+        self.assertEqual(r.fdxmsg["mdesc"], "gpscog")
+        assert isnan(r.fdxmsg["cog"])
+        assert isnan(r.fdxmsg["sog"])
 
         r = FDXMessage(_b("21 04 25 0c 01 66 7e 15 81"))  # Steaming ahead
-        self.assertEqual(int(r["cog"]), 177)
-        self.assertEqual(r["sog"], 2.68)
+        self.assertEqual(int(r.fdxmsg["cog"]), 177)
+        self.assertEqual(r.fdxmsg["sog"], 2.68)
 
         # gpstime
         r = FDXMessage(_b("24 07 23 11 26 1f 0f 08 18 00 37 81"))
-        self.assertEqual(r["mdesc"], "gpstime")
-        assert isinstance(r["utctime"], datetime)
+        self.assertEqual(r.fdxmsg["mdesc"], "gpstime")
+        assert isinstance(r.fdxmsg["utctime"], datetime)
 
         r = FDXMessage(_b("240723fffffffffffff8f881"))
-        assert isnan(r["utctime"])
+        assert isnan(r.fdxmsg["utctime"])
 
 
 if __name__ == "__main__":
