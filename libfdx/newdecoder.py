@@ -13,40 +13,25 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
-# Copyright (C) 2017-2018 Lasse Karstensen
+# Copyright (C) 2018 Lasse Karstensen
 #
-"""
-FDX decoder
-"""
-import doctest
-import json
-import logging
 import unittest
-import struct
-
 from binascii import hexlify, unhexlify
-from datetime import datetime
-from pprint import pprint
-from sys import argv, stdin, stdout, stderr
-from time import sleep, time
-
-
-import fdx_types
 
 # Index handlers on import.
+import fdx_types
 handlers = {}
 for fdxtype in dir(fdx_types):
     obj = getattr(fdx_types, fdxtype)
     if hasattr(obj, "mtype"):
         handlers[obj.mtype] = obj
 
+
 class ParseError(Exception):
     pass
 
 def FDXMessage(msg):
-    """
-    Decode the contents of an FDX sentence.
-    """
+    "Decode the contents of an FDX sentence"
     assert isinstance(msg, bytes)
     if 0:
         print("Raw message for decoding is: %s -- %i" % (hexlify(msg), len(msg)))
@@ -61,9 +46,6 @@ def FDXMessage(msg):
     if msg[1] > 75:  # Arbitrary
         raise ParseError("Suspiciously long message: %s" % hexlify(msg))
 
-#    if msg[1] != fdxclass.mlen + 4:
-#        raise ParseError("Incorrect size on message: %s" % hexlify(msg))
-
     return fdxclass.unpack(msg)
 
 class FDXDecodeTest(unittest.TestCase):
@@ -74,5 +56,4 @@ class FDXDecodeTest(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
     unittest.main()
