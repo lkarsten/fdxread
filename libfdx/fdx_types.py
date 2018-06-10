@@ -137,6 +137,8 @@ class WindMessage(object):
         raise NotImplementedError()
 
 
+class Paddlewheel(object):
+    """
 # ('msgname', length, fields, finalfunc, 'docstring')
 # fields == ((field1, index, size, [castfns]), (field2, ..), ..)
 handler = {}
@@ -144,12 +146,36 @@ handler = {}
 #                                  ("stw", 2, 2, (nan_uintle,)),   # maybe
 #                                  ("_unknown", 4, 1, (uintle,)) # quality?
 #                                 ), None,
-#    """
-#    handler[0x070304:
-#        mdesc = "dst200depth"   # previously "dst200msg3"
-#        if strbody in ['ffff000081']:
-#            return
-#   """)
+    """
+    mtype = 0x07
+    mlen = 0x03
+    def __init__(self):
+        self.stw = float("nan")
+        self.depth = float("nan")
+
+    def __repr__(self):
+        return "<Paddlewheel stw=%gkts depth=%gm" % (self.stw, self.depth)
+
+    @classmethod
+    def unpack(cls, sentence):
+        assert isinstance(sentence, bytes)
+        assert sentence[0] == cls.mtype
+        assert len(sentence) == cls.mlen + 5
+        obj = cls()
+        if sentence[3:7] == bytes(b'\xff\xff\x00\x00'):
+            return obj   # Leaving everything at NaN
+
+        depth = struct.unpack("<H", sentence[3:5])[0]
+        obj.depth = depth * 0.01
+
+        stw = struct.unpack("<H", sentence[5:7])[0]
+        obj.stw = stw * 0.001  # XXX: Verify
+
+        return obj
+
+    def pack(self):
+        raise NotImplementedError()
+
 
 
 def condense_position(fdxmsg):
@@ -344,6 +370,16 @@ class TypeTests(unittest.TestCase):
         empty_message = mask_checksum(unhexlify("010405ffff00000081"))
         m_empty = WindMessage.unpack(empty_message)
         assert isnan(m_empty.windspeed)
+
+    def test_paddlewheel(self):
+        sample_message = mask_checksum(unhexlify_sep("07 03 04 0f 02 00 0d 81"))
+        m = Paddlewheel.unpack(sample_message)
+        self.assertTrue(m.depth > 0)
+        self.assertTrue(m.stw < 30)
+
+        empty_message = mask_checksum(unhexlify_sep("07 03 04 ff ff 00 00 81"))
+        m_empty = Paddlewheel.unpack(empty_message)
+        assert isnan(m_empty.depth)
 
 
     def xtest_gpsposition(self):
