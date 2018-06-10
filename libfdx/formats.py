@@ -64,47 +64,6 @@ def json_serial(obj):
     raise TypeError("Type %s not serializable" % type(obj))
 
 
-class format_signalk_delta(object):
-    """
-    Translation between our internal format and Signal K
-    delta format.
-    """
-    def __init__(self):
-        self.gpstime = None
-
-    def handle(self, s):
-        assert isinstance(s, dict)
-
-        r = []
-        if s["mdesc"] == "wsi0":
-            r += [('environment.wind.angleApparent', radians(s["awa"]))]
-            r += [('environment.wind.speedApparent', knots2m(s["aws_lo"]))]
-        elif s["mdesc"] == "dst200depth":
-            r += [('environment.depth.belowTransducer', s["depth"])]
-        elif s["mdesc"] == "environment":
-            r += [('environment.outside.pressure', s["airpressure"]),
-                  ('environment.outside_temperature',
-                   fahr2kelvin(s["temp_f"]))]
-        elif s["mdesc"] == "gpspos":
-            r += [("navigation.position.latitude", s["lat"]),
-                  ("navigation.position.longitude", s["lon"])]
-        elif s["mdesc"] == "gpscog":
-            r += [('navigation.courseOverGroundTrue', radians(s["cog"])),
-                  ('navigation.speedOverGroundTrue', knots2m(s["sog"]))]
-        elif s["mdesc"] == "gpstime":
-            if isinstance(s["utctime"], datetime):
-                r += [("navigation.datetime.value", s["utctime"].isoformat())]
-                self.gpstime = s["utctime"]
-
-        if len(r) == 0:
-            return None
-
-        return json.dumps({"updates": {"timestamp": self.gpstime,
-                                       "source": "fdxread",
-                                       "values": [{"path": k, "value": v} for k, v in r]}},
-                           default=json_serial) + linesep
-
-
 class format_json(object):
     def __init__(self, devmode=False):
         self.devmode = devmode
@@ -142,22 +101,6 @@ class format_json(object):
 
 
 class TestFormatters(unittest.TestCase):
-    def test_sk(self):
-        def un_isotime(s):
-            assert isinstance(s, str)
-            return datetime.strptime(s, "%Y-%m-%dT%H:%M:%S")
-        formatter = format_signalk_delta()
-
-        r = formatter.handle({"utctime": un_isotime("2017-01-12T19:16:55"), "mdesc": "gpstime"})
-        assert isinstance(r, str)
-        assert r.endswith("\n")
-
-        r = formatter.handle({"mdesc": "gpspos", "lat": 54.102466, "lon": 10.8079})
-        assert isinstance(r, str)
-        assert r.endswith("\n")
-        msg = json.loads(r)
-        self.assertAlmostEqual(msg["updates"]["values"][0]["value"], 54.102466)
-
     def test_json(self):
         formatter = format_json()
         msg = {"mdesc": "environment", "airpressure": 101.42, "temp_c": 21.0}
