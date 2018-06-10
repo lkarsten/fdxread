@@ -193,7 +193,7 @@ handler[0x24] = ("gpstime", 11, (("hour", 0, 1, (uintle,)), ("minute", 1, 1, (ui
 """)
 
 handler[0x21] = ("gpscog", 8, (("sog", 0, 2, (nan_uintle, deci)),
-			     ("cog", 3, 1, (nan_uintle, degree8))),
+			       ("cog", 3, 1, (nan_uintle, degree8))),
                             None,
  	       """
                0x210425:
@@ -218,6 +218,9 @@ class FDXMessage(object):
         if 1:
             print("Raw message for decoding is: %s" % hexlify(msg))
         assert msg[-1] == 0x81
+
+        if len(msg) < 2:
+            raise ParseError("Short message: %s" % hexlify(msg))
 
         if msg[1] > 75:  # Arbitrary
             raise ParseError("Suspiciously long message: %s" % hexlify(msg))
@@ -255,6 +258,7 @@ class FDXMessage(object):
         if callable(mdef[3]):
             logging.debug("Final function: %s(%s)" % (mdef[3], self.fdxmsg))
             self.fdxmsg = mdef[3](self.fdxmsg)
+            assert self.fdxmsg is not None
 
         self.fdxmsg["mdesc"] = mdef[0]
 
