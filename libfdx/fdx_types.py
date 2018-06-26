@@ -37,16 +37,7 @@ from LatLon23 import LatLon, Latitude, Longitude
 
 from utils import hexlify_sep, unhexlify_sep
 
-def fahr2celcius(temp):
-    assert type(temp) in [float, int]
-    assert temp < 150
-    return (temp - 32) * (5/9.)
 
-
-def feet2meter(feet):
-    assert type(feet) in [float, int]
-    assert feet >= 0
-    return feet * 0.3048
 
 def degree8(n):
     assert isinstance(n, (int, float))
@@ -329,7 +320,6 @@ class GpsMovement(object):
 
 
 
-_b = unhexlify_sep
 
 class TypeTests(unittest.TestCase):
     def test_gpstime(self):
@@ -383,7 +373,7 @@ class TypeTests(unittest.TestCase):
 
 
     def xtest_gpsposition(self):
-        r = FDXMessage(_b("20 08 28 3b 21 c3 0a ff 8e e0 00 42 81"))  # Position
+        r = FDXMessage(unhexlify_sep("20 08 28 3b 21 c3 0a ff 8e e0 00 42 81"))  # Position
         self.assertEqual(r.fdxmsg["mdesc"], "gpspos")
         assert isinstance(r.fdxmsg["lat"], Latitude)
         assert isinstance(r.fdxmsg["lon"], Longitude)
